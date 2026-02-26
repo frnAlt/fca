@@ -19,6 +19,11 @@ module.exports = function createParseDelta(deps) {
           }
           if (fmtMsg) {
             if (!ctx.globalOptions.selfListen && fmtMsg.senderID === ctx.userID) return;
+            if (typeof ctx._updateThreadFromMessage === "function") {
+              try {
+                ctx._updateThreadFromMessage(fmtMsg);
+              } catch { }
+            }
             globalCallback(null, fmtMsg);
           }
         } else {

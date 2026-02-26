@@ -2,7 +2,7 @@
 
 const { getType, generateOfflineThreadingID, generateTimestampRelative, generateThreadingID, getCurrentTimestamp } = require("../../utils/format");
 const { parseAndCheckLogin } = require("../../utils/client");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 
 module.exports = function (defaultFuncs, api, ctx) {
   function setTitleNoMqtt(newTitle, threadID, callback) {

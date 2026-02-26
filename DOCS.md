@@ -13,8 +13,9 @@
 | `module/` | Login flow: `login.js`, `loginHelper.js`, `config.js`, `options.js`. |
 | `src/api/` | API implementations: `messaging/`, `threads/`, `users/`, `action/`, `http/`, `socket/`. |
 | `src/api/socket/` | MQTT/WebSocket real-time listening (`listenMqtt.js`, `core/`, `middleware/`). |
-| `src/utils/` | Shared utilities: `request.js`, `client.js`, `format.js`, `headers.js`, `cookies.js`. |
-| `src/database/` | Optional Sequelize models for threads/users. |
+| `src/utils/` | Shared utilities: `request.js`, `client.js`, `format.js`, `headers.js`, `cookies.js`, `broadcast.js` (optional helper). |
+| `src/database/` | Optional Sequelize models and data access for threads/users (used for caching and statistics). |
+| `src/remote/` | Lightweight WebSocket client for remote control (dashboard/server). |
 | `func/` | Logger, check-update, and other helpers. |
 
 For a concise codebase overview, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
@@ -214,6 +215,8 @@ Optional config file in the project root (see [§ 1.4. Auto Login](#14-auto-logi
 | `apiServer` | Base URL for external login API (default: `https://minhdong.site`). |
 | `apiKey` | Optional API key for the login server. |
 | `credentials` | `{ email, password, twofactor }` for auto-login and external API login. |
+| `antiGetInfo` | `{ AntiGetThreadInfo, AntiGetUserInfo }` switches between DB-backed anti-get-info and legacy behavior. |
+| `remoteControl` | `{ enabled, url, token, autoReconnect }` enables remote control over WebSocket. |
 
 ---
 
@@ -696,6 +699,14 @@ api.getUserInfo(["100012345678901", "100012345678902"], (err, userInfo) => {
 });
 ```
 
+#### Caching and Anti-Get-Info
+
+- `getUserInfo` uses GraphQL to fetch profiles and stores normalized data in the `User` table (see `src/database/userData.js`).
+- On each call:
+  - The library first checks the DB for existing entries.
+  - Missing or stale entries are fetched from Facebook and persisted back to SQLite.
+- If `antiGetInfo.AntiGetUserInfo` is set to `true` in `fca-config.json`, the implementation falls back to the legacy `/chat/user_info/` endpoint and logs a Horizon-style warning when spam/limits are detected.
+
 ---
 
 ### 3.4. Message Scheduler - Schedule Messages
@@ -986,6 +997,12 @@ api.getThreadInfo("1234567890", (err, threadInfo) => {
     console.log("Emoji:", threadInfo.emoji);
 });
 ```
+
+#### Caching and Anti-Get-Info
+
+- `getThreadInfo` uses a GraphQL batch endpoint and caches responses in the `Thread` table (see `src/database/threadData.js`).
+- Subsequent calls within a short time window may be served from SQLite to reduce pressure on Facebook endpoints.
+- When Facebook signals spam/limits, a Horizon-style warning is logged and the error is surfaced to your callback/Promise.
 
 ---
 

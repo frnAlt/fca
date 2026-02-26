@@ -287,6 +287,20 @@ Keep **`fca-config.json`** out of version control (add it to `.gitignore`) since
 
 ---
 
+## 🔐 Security, Trust & Supply Chain
+
+- Published via **GitHub Actions** using `npm publish --provenance`, so the tarball on npm can be cryptographically tied back to this repo.
+- Core runtime code in `module/` and `src/` is **readable JavaScript** with no obfuscated logic.
+- Legacy forks (such as Horizon) are kept only for reference and are **not** shipped in the npm package.
+- No telemetry or hidden network calls:
+  - All HTTP traffic is implemented in `src/utils/request.js` and `module/loginHelper.js`.
+  - External URLs (such as `apiServer` or proxies) are fully user‑configurable.
+- The npm publish account uses **2FA** and dedicated automation tokens.
+
+See `SECURITY.md` for more details.
+
+---
+
 ## 👂 Listening for Messages
 
 ### Echo Bot with Stop Command
@@ -372,6 +386,79 @@ _(For full details, please read the source code or `DOCS.md`)_
 ### 🔐 Auth & Listening
 
 `logout`, `getAppState`, `setOptions`, `listenMqtt`
+
+---
+## 🎛 Event Hooks & Remote Control (Advanced)
+
+Starting from `3.x`, the API instance also behaves like an **EventEmitter** for lifecycle and remote‑control events:
+
+- **Lifecycle events**:
+  - `sessionExpired` — login session is no longer valid, auto‑login will be attempted (if configured).
+  - `autoLoginSuccess` — auto‑login succeeded and the failed request will be retried.
+  - `autoLoginFailed` — auto‑login could not recover the session.
+  - `checkpoint` — generic checkpoint, with subtype in `{ type: "282" | "956" | "scraping_warning" }`.
+  - `checkpoint_282`, `checkpoint_956` — more specific checkpoint events.
+  - `loginBlocked` — Facebook actively blocked the login (error `1357001`).
+  - `rateLimit` — HTTP 429 detected on Facebook endpoints.
+  - `networkError` — network‑level failure (timeouts, DNS, connection reset, etc.).
+
+Usage:
+
+```javascript
+api.on("checkpoint_956", ({ res }) => {
+  console.error("Checkpoint 956 detected, manual action required.");
+});
+
+api.on("rateLimit", ({ url, method }) => {
+  console.warn("Rate limit hit on", method, url);
+});
+```
+
+- **Remote control events** (when `remoteControl.enabled` is `true` in `fca-config.json`):
+  - `remoteConnected` / `remoteDisconnected`
+  - `remoteStop`
+  - `remoteBroadcast`
+  - `remoteMessage` (raw messages from your WS backend)
+
+See `examples/remote-control.js` for a concrete integration example.
+
+---
+
+## 🌐 Proxy Configuration & Broadcast Helper
+
+- **Proxy support**:
+  - You can pass a proxy per‑login:
+
+```javascript
+login({ appState }, (err, api) => {
+  if (err) return console.error(err);
+  api.setOptions({ proxy: "http://user:pass@host:port" });
+});
+```
+
+  - Or define a default in `fca-config.json`:
+
+```json
+{
+  "proxy": "http://user:pass@host:port"
+}
+```
+
+  - All HTTP calls go through this proxy using `https-proxy-agent`.
+
+- **Broadcast helper** (optional util):
+  - Not part of the public API surface on purpose (to avoid encouraging spam).
+  - You can use it manually:
+
+```javascript
+const broadcast = require("@dongdev/fca-unofficial/src/utils/broadcast");
+
+const threads = ["1000...", "2000..."];
+await broadcast(api, threads, { body: "Hello!" }, {
+  delayMs: 1200,
+  skipBlocked: true
+});
+```
 
 ---
 

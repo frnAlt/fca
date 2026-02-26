@@ -184,6 +184,12 @@ declare module '@dongdev/fca-unofficial' {
     listen: (callback?: (err: Error | null, message: IFCAU_ListenMessage) => void) => EventEmitter;
     listenMqtt: (callback?: (err: Error | null, message: IFCAU_ListenMessage) => void) => EventEmitter & { stopListening: (callback?: () => void) => void };
 
+    // Lifecycle & Remote Events
+    on: (event: string, listener: (...args: any[]) => void) => IFCAU_Api;
+    once: (event: string, listener: (...args: any[]) => void) => IFCAU_Api;
+    off: (event: string, listener: (...args: any[]) => void) => IFCAU_Api;
+    removeAllListeners: (event?: string) => IFCAU_Api;
+
     // Middleware System
     useMiddleware: (middleware: IFCAU_Middleware | string, fn?: IFCAU_Middleware) => () => void;
     removeMiddleware: (identifier: string | IFCAU_Middleware) => boolean;

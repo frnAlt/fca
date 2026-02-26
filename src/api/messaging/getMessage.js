@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { _formatAttachment } = require("../../utils/format");
 const { parseAndCheckLogin } = require("../../utils/client");
 function formatMessage(threadID, data) {

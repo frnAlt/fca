@@ -20,6 +20,13 @@ function makeParsable(html) {
 
 function parseAndCheckLogin(ctx, http, retryCount = 0) {
   const delay = ms => new Promise(r => setTimeout(r, ms));
+  const emit = (event, payload) => {
+    try {
+      if (ctx && ctx._emitter && typeof ctx._emitter.emit === "function") {
+        ctx._emitter.emit(event, payload);
+      }
+    } catch { }
+  };
   const headerOf = (headers, name) => {
     if (!headers) return;
     const k = Object.keys(headers).find(k => k.toLowerCase() === name.toLowerCase());
@@ -59,11 +66,13 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
     // Set flag to prevent concurrent auto login attempts
     ctx.auto_login = true;
     logger("Login session expired, attempting auto login...", "warn");
+    emit("sessionExpired", { res: resData });
 
     try {
       const ok = await ctx.performAutoLogin();
       if (ok) {
         logger("Auto login successful! Retrying request...", "info");
+        emit("autoLoginSuccess", { res: resData });
         ctx.auto_login = false;
 
         // After successful auto login, retry the original request
@@ -128,6 +137,7 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
         const e = new Error("Not logged in. Auto login failed.");
         e.error = "Not logged in.";
         e.res = resData;
+        emit("autoLoginFailed", { error: e, res: resData });
         throw e;
       }
     } catch (autoLoginErr) {
@@ -147,6 +157,7 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
       e.error = "Not logged in.";
       e.res = resData;
       e.originalError = autoLoginErr;
+      emit("autoLoginFailed", { error: e, res: resData });
       throw e;
     }
   };
@@ -304,7 +315,9 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
     }
     if (parsed?.error === 1357001) {
       const err = new Error("Facebook blocked the login");
-      err.error = "Not logged in.";
+      err.error = "login_blocked";
+      err.res = parsed;
+      emit("loginBlocked", { res: parsed });
       throw err;
     }
     const resData = parsed;
@@ -313,6 +326,7 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
       resStr.includes("XCheckpointFBScrapingWarningController") ||
       resStr.includes("601051028565049")
     ) {
+      emit("checkpoint", { type: "scraping_warning", res: resData });
       return await maybeAutoLogin(resData, res?.config);
     }
     if (
@@ -326,6 +340,8 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
       const err = new Error("Checkpoint 282 detected");
       err.error = "checkpoint_282";
       err.res = resData;
+      emit("checkpoint", { type: "282", res: resData });
+      emit("checkpoint_282", { res: resData });
       throw err;
     }
     if (resStr.includes("828281030927956")) {
@@ -333,6 +349,8 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
       const err = new Error("Checkpoint 956 detected");
       err.error = "checkpoint_956";
       err.res = resData;
+      emit("checkpoint", { type: "956", res: resData });
+      emit("checkpoint_956", { res: resData });
       throw err;
     }
     return parsed;

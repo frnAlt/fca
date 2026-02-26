@@ -16,6 +16,11 @@ module.exports = function(sequelize) {
         allowNull: false,
         unique: true
       },
+      messageCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
       data: {
         type: DataTypes.TEXT,
         allowNull: true,

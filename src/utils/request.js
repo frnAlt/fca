@@ -85,8 +85,15 @@ const client = wrapper(axios.create({
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-async function requestWithRetry(fn, retries = 3, baseDelay = 1000) {
+async function requestWithRetry(fn, retries = 3, baseDelay = 1000, ctx) {
   let lastError;
+  const emit = (event, payload) => {
+    try {
+      if (ctx && ctx._emitter && typeof ctx._emitter.emit === "function") {
+        ctx._emitter.emit(event, payload);
+      }
+    } catch { }
+  };
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
@@ -104,6 +111,11 @@ async function requestWithRetry(fn, retries = 3, baseDelay = 1000) {
 
       // Don't retry on client errors (4xx) except 429 (rate limit)
       const status = e?.response?.status || e?.statusCode || 0;
+      const url = e?.config?.url || "";
+      const method = String(e?.config?.method || "").toUpperCase();
+      if (status === 429) {
+        emit("rateLimit", { status, url, method });
+      }
       if (status >= 400 && status < 500 && status !== 429) {
         return e.response || Promise.reject(e);
       }
@@ -111,6 +123,21 @@ async function requestWithRetry(fn, retries = 3, baseDelay = 1000) {
       if (i === retries - 1) {
         return e.response || Promise.reject(e);
       }
+      // Network errors (no status code)
+      const netCode = e?.code || "";
+      const msg = e && e.message ? e.message : String(e || "");
+      if (
+        !status &&
+        (netCode === "UND_ERR_CONNECT_TIMEOUT" ||
+          netCode === "ETIMEDOUT" ||
+          netCode === "ECONNRESET" ||
+          netCode === "ECONNREFUSED" ||
+          netCode === "ENOTFOUND" ||
+          /timeout|connect timeout|network error|fetch failed/i.test(msg))
+      ) {
+        emit("networkError", { code: netCode, message: msg, url, method });
+      }
+
       // Exponential backoff with jitter
       const backoffDelay = Math.min(
         baseDelay * Math.pow(2, i) + Math.floor(Math.random() * 200),
@@ -158,13 +185,13 @@ function isPairArrayList(arr) {
   return Array.isArray(arr) && arr.length > 0 && arr.every(x => Array.isArray(x) && x.length === 2 && typeof x[0] === "string");
 }
 
-function cleanGet(url) {
-  return requestWithRetry(() => client.get(url, cfg()), 3, 1000);
+function cleanGet(url, ctx) {
+  return requestWithRetry(() => client.get(url, cfg()), 3, 1000, ctx);
 }
 
 function get(url, reqJar, qs, options, ctx, customHeader) {
   const headers = getHeaders(url, options, ctx, customHeader);
-  return requestWithRetry(() => client.get(url, cfg({ reqJar, headers, params: qs })), 3, 1000);
+  return requestWithRetry(() => client.get(url, cfg({ reqJar, headers, params: qs })), 3, 1000, ctx);
 }
 
 function post(url, reqJar, form, options, ctx, customHeader) {
@@ -197,7 +224,7 @@ function post(url, reqJar, form, options, ctx, customHeader) {
     data = p.toString();
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
-  return requestWithRetry(() => client.post(url, data, cfg({ reqJar, headers })), 3, 1000);
+  return requestWithRetry(() => client.post(url, data, cfg({ reqJar, headers })), 3, 1000, ctx);
 }
 
 async function postFormData(url, reqJar, form, qs, options, ctx) {
@@ -250,7 +277,7 @@ async function postFormData(url, reqJar, form, qs, options, ctx) {
     }
   }
   const headers = { ...getHeaders(url, options, ctx), ...fd.getHeaders() };
-  return requestWithRetry(() => client.post(url, fd, cfg({ reqJar, headers, params: qs })), 3, 1000);
+  return requestWithRetry(() => client.post(url, fd, cfg({ reqJar, headers, params: qs })), 3, 1000, ctx);
 }
 
 function makeDefaults(html, userID, ctx) {

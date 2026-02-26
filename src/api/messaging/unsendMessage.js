@@ -1,7 +1,7 @@
 "use strict";
 
 const { generateOfflineThreadingID } = require("../../utils/format.js");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 
 module.exports = function (defaultFuncs, api, ctx) {
   return function unsendMessage(messageID, threadID, callback) {

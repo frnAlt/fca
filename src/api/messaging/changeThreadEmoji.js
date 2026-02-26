@@ -1,7 +1,7 @@
 "use strict";
 
 const { generateOfflineThreadingID } = require("../../utils/format");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { parseAndCheckLogin } = require("../../utils/client");
 module.exports = function (defaultFuncs, api, ctx) {
   function changeThreadEmojiNoMqtt(emoji, threadID, callback) {

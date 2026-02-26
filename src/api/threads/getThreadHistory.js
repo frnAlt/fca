@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { parseAndCheckLogin } = require("../../utils/client");
 const { getAdminTextMessageType } = require("../../utils/format");
 function getExtension(original_extension, filename = "") {

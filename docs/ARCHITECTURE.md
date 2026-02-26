@@ -91,7 +91,7 @@ Real-time events (messages, typing, read receipts, etc.) are delivered via MQTT.
 | `src/api/socket/listenMqtt.js` | Wires MQTT connection, seq ID, middleware, and callback; exposes `stopListening`. |
 | `src/api/socket/core/connectMqtt.js` | MQTT connection and message handling. |
 | `src/api/socket/core/getSeqID.js` | Fetches sequence ID for MQTT. |
-| `src/api/socket/core/parseDelta.js` | Parses MQTT payloads into event objects. |
+| `src/api/socket/core/parseDelta.js` | Parses MQTT payloads into event objects and optionally updates DB-backed statistics (e.g. thread message counts). |
 | `src/api/socket/core/getTaskResponseData.js` | Task response handling. |
 | `src/api/socket/core/emitAuth.js` | Emits auth-related errors (e.g. not logged in, blocked). |
 | `src/api/socket/detail/buildStream.js` | Builds WebSocket/MQTT stream (with optional proxy). |
@@ -106,7 +106,7 @@ Event types include: `message`, `message_reply`, `event` (thread log events), `t
 
 - **`src/utils/format.js`** — Type checking and formatting helpers.
 - **`src/utils/constants.js`** — `getFrom`, `isReadableStream`.
-- **`src/utils/loginParser.js`** — Login response parsing.
+- **`src/utils/loginParser.js`** — Login response parsing and auto-login / checkpoint detection (emits lifecycle events via `ctx._emitter`). 
 - **`src/utils/messageFormat.js`** — Message formatting.
 - **`func/logger.js`** — Colored console logger.
 - **`func/checkUpdate.js`** — Optional version check / auto-update.
@@ -117,9 +117,12 @@ Event types include: `message`, `message_reply`, `event` (thread log events), `t
 
 - **`src/database/models/`** — Sequelize models (e.g. `user.js`, `thread.js`).
 - **`src/database/models/index.js`** — Model registration.
-- **`src/database/threadData.js`**, **userData.js** — Data access using those models.
+- **`src/database/threadData.js`**, **userData.js** — Data access using those models (used by anti-get-info features and realtime statistics).
 
-Used for optional persistence; the core API works without them.
+The core API can operate without a database, but when enabled it:
+
+- Caches expensive calls such as `getUserInfo`/`getThreadInfo` to reduce Facebook API pressure.
+- Tracks per-thread statistics (e.g. `messageCount`, `timestamp`) to support higher-level analytics and dashboards.
 
 ---
 

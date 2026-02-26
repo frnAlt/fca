@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const stream = require("stream");
 const { URL } = require("url");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 
 let http = null;
 let cookieJar = new CookieJar();

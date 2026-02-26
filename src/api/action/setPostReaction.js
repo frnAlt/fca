@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { parseAndCheckLogin } = require("../../utils/client");
 const { getType } = require("../../utils/format");
 function formatData(resData) {

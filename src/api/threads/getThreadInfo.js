@@ -1,6 +1,9 @@
-"use strict";
+'use strict';
 
-const { parseAndCheckLogin } = require("../../utils/client");
+const fs = require('fs');
+const path = require('path');
+const { parseAndCheckLogin } = require('../../utils/client');
+const log = require('../../../func/logAdapter');
 
 function formatEventReminders(reminder) {
   return {
@@ -131,53 +134,162 @@ function formatThreadGraphQLResponse(data) {
 }
 
 module.exports = function (defaultFuncs, api, ctx) {
-  return async function getThreadInfo(threadID) {
-    const threadIDs = Array.isArray(threadID) ? threadID : [threadID];
+  const dbFiles = fs.readdirSync(path.join(__dirname, "../../database"))
+    .filter(f => path.extname(f) === ".js")
+    .reduce((acc, file) => {
+      acc[path.basename(file, ".js")] = require(path.join(__dirname, "../../database", file))(api);
+      return acc;
+    }, {});
 
-    let form = {};
-    threadIDs.forEach((t, i) => {
-      form["o" + i] = {
-        doc_id: "3449967031715030",
-        query_params: {
-          id: t,
-          message_limit: 0,
-          load_messages: false,
-          load_read_receipts: false,
-          before: null,
-        },
-      };
+  const { threadData } = dbFiles;
+  const { create, get, update } = threadData || {};
+  const FRESH_MS = 10 * 60 * 1000;
+  return function getThreadInfo(threadID, callback) {
+    let resolveFunc;
+    let rejectFunc;
+
+    const returnPromise = new Promise((resolve, reject) => {
+      resolveFunc = resolve;
+      rejectFunc = reject;
     });
 
-    form = {
-      queries: JSON.stringify(form),
-      batch_name: "MessengerGraphQLThreadFetcher",
-    };
-
-    const resData = await defaultFuncs
-      .post(
-        "https://www.facebook.com/api/graphqlbatch/",
-        ctx.jar,
-        form
-      )
-      .then(parseAndCheckLogin(ctx, defaultFuncs));
-
-    if (resData.error) throw resData;
-
-    const threadInfos = {};
-
-    for (let i = resData.length - 2; i >= 0; i--) {
-      const res = resData[i];
-      const oKey = Object.keys(res)[0];
-      const responseData = res[oKey];
-
-      const threadInfo = formatThreadGraphQLResponse(responseData.data);
-      if (threadInfo) {
-        threadInfos[threadInfo.threadID] = threadInfo;
-      }
+    if (typeof callback !== "function") {
+      callback = (err, data) => {
+        if (err) {
+          return rejectFunc(err);
+        }
+        return resolveFunc(data);
+      };
     }
 
-    return Array.isArray(threadID)
-      ? threadInfos
-      : Object.values(threadInfos)[0] || null;
+    const threadIDs = Array.isArray(threadID) ? threadID.map(String) : [String(threadID)];
+
+    const now = Date.now();
+
+    const loadFromDb = async ids => {
+      if (!threadData || typeof get !== "function") return { fresh: {}, stale: ids };
+      const fresh = {};
+      const stale = [];
+      const rows = await Promise.all(ids.map(id => get(id).catch(() => null)));
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        const row = rows[i];
+        if (row && row.data) {
+          const updatedAt = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+          if (updatedAt && now - updatedAt <= FRESH_MS) {
+            fresh[id] = row.data;
+          } else {
+            stale.push(id);
+          }
+        } else {
+          stale.push(id);
+        }
+      }
+      return { fresh, stale };
+    };
+
+    const fetchFromGraphQL = async ids => {
+      if (!ids.length) return {};
+      const queries = {};
+      ids.forEach((t, i) => {
+        queries["o" + i] = {
+          doc_id: "3449967031715030",
+          query_params: {
+            id: t,
+            message_limit: 0,
+            load_messages: false,
+            load_read_receipts: false,
+            before: null
+          }
+        };
+      });
+
+      const form = {
+        queries: JSON.stringify(queries),
+        batch_name: "MessengerGraphQLThreadFetcher"
+      };
+
+      const resData = await defaultFuncs
+        .post(
+          "https://www.facebook.com/api/graphqlbatch/",
+          ctx.jar,
+          form
+        )
+        .then(parseAndCheckLogin(ctx, defaultFuncs));
+
+      if (resData.error) {
+        throw resData;
+      }
+
+      const out = {};
+      for (let i = resData.length - 2; i >= 0; i--) {
+        const res = resData[i];
+        const oKey = Object.keys(res)[0];
+        const responseData = res[oKey];
+        try {
+          const info = formatThreadGraphQLResponse(responseData.data);
+          if (info && info.threadID) {
+            out[info.threadID] = info;
+          }
+        } catch (e) {
+          // Skip malformed entries but continue processing others
+          log.error("getThreadInfoGraphQL", e && e.message ? e.message : String(e));
+        }
+      }
+      return out;
+    };
+
+    (async () => {
+      try {
+        const { fresh, stale } = await loadFromDb(threadIDs);
+        let fetched = {};
+
+        if (stale.length) {
+          fetched = await fetchFromGraphQL(stale);
+
+          // Persist fetched data back to DB
+          if (threadData && (typeof create === "function" || typeof update === "function")) {
+            const tasks = [];
+            for (const id of stale) {
+              const info = fetched[id];
+              if (!info) continue;
+              const payload = { data: info };
+              if (typeof update === "function") {
+                tasks.push(update(id, payload).catch(() => null));
+              } else if (typeof create === "function") {
+                tasks.push(create(id, payload).catch(() => null));
+              }
+            }
+            if (tasks.length) {
+              try {
+                await Promise.all(tasks);
+              } catch {
+                // Swallow DB errors – not critical for API behavior
+              }
+            }
+          }
+        }
+
+        const resultMap = {};
+        for (const id of threadIDs) {
+          resultMap[id] = fresh[id] || fetched[id] || null;
+        }
+
+        const result = Array.isArray(threadID)
+          ? resultMap
+          : resultMap[threadIDs[0]] || null;
+
+        return callback(null, result);
+      } catch (err) {
+        // Horizon-style anti-get-info message to hint possible spam/limit
+        log.error(
+          "getThreadInfoGraphQL",
+          "Lỗi: getThreadInfoGraphQL Có Thể Do Bạn Spam Quá Nhiều, Hãy Thử Lại !"
+        );
+        return callback(err);
+      }
+    })();
+
+    return returnPromise;
   };
 };

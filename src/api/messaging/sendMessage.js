@@ -11,7 +11,7 @@
  */
 
 "use strict";
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { getType } = require("../../utils/format");
 const { isReadableStream } = require("../../utils/constants");
 const { generateOfflineThreadingID } = require("../../utils/format");

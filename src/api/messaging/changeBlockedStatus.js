@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { parseAndCheckLogin, saveCookies } = require("../../utils/client");
 module.exports = function(defaultFuncs, api, ctx) {
   return function changeBlockedStatus(userID, block, callback) {

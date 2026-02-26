@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { getType, generateOfflineThreadingID } = require("../../utils/format");
 
 module.exports = function (defaultFuncs, api, ctx) {

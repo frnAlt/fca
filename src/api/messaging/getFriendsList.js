@@ -1,7 +1,7 @@
 "use strict";
 
 const { formatID } = require("../../utils/format");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { parseAndCheckLogin } = require("../../utils/client");
 const GENDERS = {
   0: "unknown",

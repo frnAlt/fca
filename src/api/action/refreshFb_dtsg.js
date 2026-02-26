@@ -1,6 +1,6 @@
 "use strict";
 
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const { getFrom } = require("../../utils/constants");
 const { get } = require("../../utils/request")
 const { getType } = require("../../utils/format");

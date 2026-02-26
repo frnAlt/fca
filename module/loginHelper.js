@@ -1,12 +1,14 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const EventEmitter = require("events");
 const models = require("../src/database/models");
 const logger = require("../func/logger");
 const { get, post, jar, makeDefaults } = require("../src/utils/request");
 const { saveCookies, getAppState } = require("../src/utils/client");
 const { getFrom } = require("../src/utils/constants");
 const { loadConfig } = require("./config");
+const { createRemoteClient } = require("../src/remote/remoteClient");
 const { config } = loadConfig();
 const axiosBase = require("axios");
 const regions = [
@@ -1119,6 +1121,7 @@ function loginHelper(appState, Cookie, email, password, globalOptions, callback)
             }
           });
         logger("FCA fix/update by DongDev (Donix-VN)", "info");
+        const emitter = new EventEmitter();
         const ctxMain = {
           userID,
           jar,
@@ -1137,7 +1140,8 @@ function loginHelper(appState, Cookie, email, password, globalOptions, callback)
           clientId: getFrom(html, '["MqttWebDeviceID",[],{"clientID":"', '"}') || "",
           wsReqNumber: 0,
           wsTaskNumber: 0,
-          tasks: new Map()
+          tasks: new Map(),
+          _emitter: emitter
         };
         ctxMain.options = globalOptions;
         ctxMain.bypassAutomation = ctx.bypassAutomation.bind(ctxMain);
@@ -1171,9 +1175,64 @@ function loginHelper(appState, Cookie, email, password, globalOptions, callback)
           },
           getLatestCookieFromDB: async function (uid = userID) {
             return await getLatestBackup(uid, "cookie");
-          }
+          },
+          on: emitter.on.bind(emitter),
+          once: emitter.once.bind(emitter),
+          off: emitter.removeListener.bind(emitter),
+          removeAllListeners: emitter.removeAllListeners.bind(emitter)
         };
         const defaultFuncs = makeDefaults(html, userID, ctxMain);
+
+        // Attach lightweight DB updaters for realtime events (MQTT)
+        try {
+          const Thread = models && models.Thread;
+          if (!Thread) {
+            throw new Error("Thread model not available");
+          }
+
+          ctxMain._updateThreadFromMessage = async msg => {
+            try {
+              if (!msg || !msg.threadID) return;
+              const id = String(msg.threadID);
+              // Fast path: increment messageCount column directly
+              let affected = 0;
+              try {
+                const res = await Thread.increment("messageCount", { by: 1, where: { threadID: id } });
+                if (Array.isArray(res) && typeof res[0] === "number") {
+                  affected = res[0];
+                }
+              } catch {
+                // Ignore increment errors, we'll try to create below
+              }
+              // If no row was updated, ensure a row exists
+              if (!affected) {
+                try {
+                  await Thread.create({ threadID: id, messageCount: 1, data: { threadID: id } });
+                } catch {
+                  // Ignore create races / duplicates
+                }
+              }
+            } catch (e) {
+              const msgText = e && e.message ? e.message : String(e);
+              logger(`updateThreadFromMessage error: ${msgText}`, "warn");
+            }
+          };
+        } catch {
+          // If DB layer is unavailable, skip realtime thread updates
+        }
+
+        // Attach remote control client if enabled in config
+        let remote = null;
+        try {
+          if (config && config.remoteControl && config.remoteControl.enabled) {
+            remote = createRemoteClient(api, ctxMain, config.remoteControl);
+          }
+        } catch (e) {
+          logger(`Remote control initialization failed: ${e && e.message ? e.message : String(e)}`, "warn");
+        }
+        if (remote) {
+          api.remote = remote;
+        }
         const srcRoot = path.join(__dirname, "../src/api");
         let loaded = 0;
         let skipped = 0;

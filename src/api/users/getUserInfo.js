@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const log = require("npmlog");
+const log = require("../../../func/logAdapter");
 const logger = require("../../../func/logger");
 const { parseAndCheckLogin } = require("../../utils/client.js");
 
@@ -118,13 +118,81 @@ function mergeUserEntry(a, b) {
   };
 }
 
-const queue = [];
-let isProcessingQueue = false;
-const processingUsers = new Set();
-const queuedUsers = new Set();
-const cooldown = new Map();
-
 module.exports = function (defaultFuncs, api, ctx) {
+  // Read FastConfig-style anti-get-info flag from global config (if available)
+  const cfg = global.fca && global.fca.config;
+  const antiCfg = cfg && cfg.antiGetInfo;
+  const disableAntiUserInfo = !!(antiCfg && antiCfg.AntiGetUserInfo === true);
+
+  // Lightweight, Horizon-style implementation without database/queue
+  if (disableAntiUserInfo) {
+    function formatLegacyData(data) {
+      const retObj = {};
+      for (const prop in data) {
+        if (!Object.prototype.hasOwnProperty.call(data, prop)) continue;
+        const innerObj = data[prop] || {};
+        retObj[prop] = {
+          name: innerObj.name || null,
+          firstName: innerObj.firstName || null,
+          vanity: innerObj.vanity || null,
+          thumbSrc: innerObj.thumbSrc || null,
+          profileUrl: innerObj.uri || innerObj.profileUrl || null,
+          gender: innerObj.gender || null,
+          type: innerObj.type || null,
+          isFriend: !!innerObj.is_friend,
+          isBirthday: !!innerObj.is_birthday
+        };
+      }
+      return retObj;
+    }
+
+    return function getUserInfo(idsOrId, callback) {
+      let resolveFunc;
+      let rejectFunc;
+      const returnPromise = new Promise((resolve, reject) => {
+        resolveFunc = resolve;
+        rejectFunc = reject;
+      });
+
+      if (typeof callback !== "function") {
+        callback = (err, userInfo) => {
+          if (err) return rejectFunc(err);
+          resolveFunc(userInfo);
+        };
+      }
+
+      const ids = Array.isArray(idsOrId) ? idsOrId : [idsOrId];
+      const form = {};
+      ids.forEach((v, i) => {
+        form[`ids[${i}]`] = v;
+      });
+
+      defaultFuncs
+        .post("https://www.facebook.com/chat/user_info/", ctx.jar, form)
+        .then(parseAndCheckLogin(ctx, defaultFuncs))
+        .then(resData => {
+          if (resData.error) throw resData;
+          const profiles = resData?.payload?.profiles || {};
+          return callback(null, formatLegacyData(profiles));
+        })
+        .catch(err => {
+          log.error(
+            "getUserInfo",
+            "Lỗi: getUserInfo Có Thể Do Bạn Spam Quá Nhiều !,Hãy Thử Lại !"
+          );
+          return callback(err);
+        });
+
+      return returnPromise;
+    };
+  }
+
+  const queue = [];
+  let isProcessingQueue = false;
+  const processingUsers = new Set();
+  const queuedUsers = new Set();
+  const cooldown = new Map();
+
   const dbFiles = fs.readdirSync(path.join(__dirname, "../../database")).filter(f => path.extname(f) === ".js").reduce((acc, file) => {
     acc[path.basename(file, ".js")] = require(path.join(__dirname, "../../database", file))(api);
     return acc;
@@ -319,7 +387,11 @@ module.exports = function (defaultFuncs, api, ctx) {
       }
       return callback(null, ret);
     }).catch(err => {
-      log.error("getUserInfo", "Error: " + (err?.message || "Unknown"));
+      // Horizon-style anti-get-info message to hint rate limiting / spam block
+      log.error(
+        "getUserInfo",
+        "Lỗi: getUserInfo Có Thể Do Bạn Spam Quá Nhiều !,Hãy Thử Lại !"
+      );
       callback(err);
     });
     return returnPromise;
