@@ -1,6 +1,6 @@
 "use_strict";
 
-const { generateOfflineThreadingID } = require("../../utils/format.js");
+const { generateOfflineThreadingID } = require("../../utils/format");
 module.exports = (defaultFuncs, api, ctx) => {
   return (text, messageID, callback) => {
     let reqID = ctx.wsReqNumber + 1;

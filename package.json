@@ -1,6 +1,6 @@
 {
   "name": "@dongdev/fca-unofficial",
-  "version": "3.0.30",
+  "version": "3.0.31",
   "description": "Unofficial Facebook Chat API for Node.js - Interact with Facebook Messenger programmatically",
   "main": "index.js",
   "types": "index.d.ts",
@@ -74,6 +74,7 @@
     "https-proxy-agent": "^4.0.0",
     "mqtt": "^4.3.8",
     "sequelize": "^6.37.6",
+    "sqlite3": "^5.1.7",
     "totp-generator": "^1.0.0",
     "ws": "^8.18.1"
   },

@@ -291,3 +291,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [3.0.28]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.27...v3.0.28
 [3.0.27]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.25...v3.0.27
 [1.0.10]: https://github.com/Donix-VN/fca-unofficial/releases/tag/v1.0.10
+
+## v3.0.30 - 2026-03-07
+- Hotfix / auto bump

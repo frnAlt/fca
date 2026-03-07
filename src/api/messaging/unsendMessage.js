@@ -1,6 +1,6 @@
 "use strict";
 
-const { generateOfflineThreadingID } = require("../../utils/format.js");
+const { generateOfflineThreadingID } = require("../../utils/format");
 const log = require("../../../func/logAdapter");
 
 module.exports = function (defaultFuncs, api, ctx) {

@@ -1,6 +1,6 @@
 "use strict";
 
-const { generateOfflineThreadingID, getType } = require("../../utils/format.js");
+const { generateOfflineThreadingID, getType } = require("../../utils/format");
 module.exports = function (defaultFuncs, api, ctx) {
   return function addUserToGroup(userID, threadID, callback) {
     return new Promise((resolve, reject) => {

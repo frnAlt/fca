@@ -1,6 +1,7 @@
 "use strict";
 
 const { parseAndCheckLogin } = require("../../utils/client");
+const { formatThread } = require("../../utils/format");
 module.exports = function(defaultFuncs, api, ctx) {
   return function searchForThread(name, callback) {
     let resolveFunc = function() {};
@@ -43,7 +44,7 @@ module.exports = function(defaultFuncs, api, ctx) {
         }
         return callback(
           null,
-          resData.payload.mercury_payload.threads.map(utils.formatThread)
+          resData.payload.mercury_payload.threads.map(formatThread)
         );
       });
 

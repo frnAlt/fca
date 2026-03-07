@@ -1,5 +1,5 @@
 "use strict";
-const { getType } = require("../../utils/format.js");
+const { getType } = require("../../utils/format");
 module.exports = function (defaultFuncs, api, ctx) {
   return function sendTyping(threadID, isTyping, options, callback) {
     var resolveFunc = function () { };

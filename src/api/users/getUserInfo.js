@@ -193,10 +193,13 @@ module.exports = function (defaultFuncs, api, ctx) {
   const queuedUsers = new Set();
   const cooldown = new Map();
 
-  const dbFiles = fs.readdirSync(path.join(__dirname, "../../database")).filter(f => path.extname(f) === ".js").reduce((acc, file) => {
-    acc[path.basename(file, ".js")] = require(path.join(__dirname, "../../database", file))(api);
-    return acc;
-  }, {});
+  const dbFiles = fs.readdirSync(path.join(__dirname, "../../database"))
+    .filter(f => path.extname(f) === ".js")
+    .reduce((acc, file) => {
+      const mod = require(path.join(__dirname, "../../database", file));
+      acc[path.basename(file, ".js")] = typeof mod === "function" ? mod(api) : mod;
+      return acc;
+    }, {});
   const { userData } = dbFiles;
   const { create, get, update, getAll } = userData;
 

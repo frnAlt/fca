@@ -1,6 +1,6 @@
 "use strict";
 
-const { generateOfflineThreadingID } = require("../../utils/format.js");
+const { generateOfflineThreadingID } = require("../../utils/format");
 module.exports = (defaultFuncs, api, ctx) => {
   return async (color, threadID, callback) => {
     let reqID = ++ctx.wsReqNumber;

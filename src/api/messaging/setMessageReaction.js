@@ -49,16 +49,15 @@ module.exports = function (defaultFuncs, api, ctx) {
         failure_count: null,
         label: "29",
         payload: JSON.stringify(taskPayload),
-        queue_name: JSON.stringify(["reaction", messageID]),
+        queue_name: "reaction:" + messageID,
         task_id: taskID,
       };
       const mqttForm = {
-        app_id: "772021112871879",
+        app_id: "2220391788200892",
         payload: JSON.stringify({
-          data_trace_id: null,
           epoch_id: parseInt(generateOfflineThreadingID()),
           tasks: [task],
-          version_id: "25376272951962053"
+          version_id: "24585299697835063"
         }),
         request_id: reqID,
         type: 3

@@ -63,6 +63,7 @@ try {
 
   models.sequelize = sequelize;
   models.Sequelize = Sequelize;
+  models.isReady = true;
   models.syncAll = async () => {
     try {
       if (!sequelize) {
@@ -75,10 +76,10 @@ try {
     }
   };
 } catch (initError) {
-  // If initialization fails completely, still export a valid structure
   console.error("Database initialization error:", initError && initError.message ? initError.message : String(initError));
   models.sequelize = null;
   models.Sequelize = Sequelize;
+  models.isReady = false;
   models.syncAll = async () => {
     throw new Error("Database not initialized");
   };

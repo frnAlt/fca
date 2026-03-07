@@ -1,7 +1,7 @@
 "use strict";
 
-const { getType } = require("../../utils/format.js");
-const { get } = require("../../utils/request.js");
+const { getType } = require("../../utils/format");
+const { get } = require("../../utils/request");
 
 const httpGetFactory = function (defaultFuncs, api, ctx) {
   return function httpGet(url, form, callback, notAPI) {

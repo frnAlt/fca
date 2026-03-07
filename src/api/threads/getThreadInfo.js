@@ -137,7 +137,8 @@ module.exports = function (defaultFuncs, api, ctx) {
   const dbFiles = fs.readdirSync(path.join(__dirname, "../../database"))
     .filter(f => path.extname(f) === ".js")
     .reduce((acc, file) => {
-      acc[path.basename(file, ".js")] = require(path.join(__dirname, "../../database", file))(api);
+      const mod = require(path.join(__dirname, "../../database", file));
+      acc[path.basename(file, ".js")] = typeof mod === "function" ? mod(api) : mod;
       return acc;
     }, {});
 

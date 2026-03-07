@@ -1,97 +1,93 @@
-const { Thread } = require("./models");
+"use strict";
 
-const validateThreadID = threadID => {
-  if (typeof threadID !== "string" && typeof threadID !== "number") {
-    throw new Error("Invalid threadID: must be a string or number.");
-  }
-  return String(threadID);
-};
-const validateData = data => {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new Error("Invalid data: must be a non-empty object.");
-  }
-};
+const models = require("./models");
+const {
+  DB_NOT_INIT,
+  validateId,
+  validateData,
+  normalizeAttributes,
+  wrapError
+} = require("./helpers");
 
-module.exports = function(bot) {
+const Thread = models.Thread;
+const ID_FIELD = "threadID";
+
+module.exports = function (bot) {
   return {
     async create(threadID, data) {
+      if (!Thread) {
+        return { thread: { threadID: validateId(threadID, ID_FIELD), ...(data || {}) }, created: true };
+      }
       try {
+        threadID = validateId(threadID, ID_FIELD);
         let thread = await Thread.findOne({ where: { threadID } });
-        if (thread) {
-          return { thread: thread.get(), created: false };
-        }
-        thread = await Thread.create({ threadID, ...data });
+        if (thread) return { thread: thread.get(), created: false };
+        thread = await Thread.create({ threadID, ...(data || {}) });
         return { thread: thread.get(), created: true };
-      } catch (error) {
-        throw new Error(`Failed to create thread: ${error.message}`);
+      } catch (err) {
+        throw wrapError("Failed to create thread", err);
       }
     },
 
     async get(threadID) {
+      if (!Thread) return null;
       try {
-        threadID = validateThreadID(threadID);
+        threadID = validateId(threadID, ID_FIELD);
         const thread = await Thread.findOne({ where: { threadID } });
         return thread ? thread.get() : null;
-      } catch (error) {
-        throw new Error(`Failed to get thread: ${error.message}`);
+      } catch (err) {
+        throw wrapError("Failed to get thread", err);
       }
     },
 
     async update(threadID, data) {
+      if (!Thread) {
+        return { thread: { threadID: validateId(threadID, ID_FIELD), ...(data || {}) }, created: false };
+      }
       try {
-        threadID = validateThreadID(threadID);
+        threadID = validateId(threadID, ID_FIELD);
         validateData(data);
         const thread = await Thread.findOne({ where: { threadID } });
-
         if (thread) {
           await thread.update(data);
           return { thread: thread.get(), created: false };
-        } else {
-          const newThread = await Thread.create({ ...data, threadID });
-          return { thread: newThread.get(), created: true };
         }
-      } catch (error) {
-        throw new Error(`Failed to update thread: ${error.message}`);
+        const newThread = await Thread.create({ ...data, threadID });
+        return { thread: newThread.get(), created: true };
+      } catch (err) {
+        throw wrapError("Failed to update thread", err);
       }
     },
 
     async del(threadID) {
+      if (!Thread) throw new Error(DB_NOT_INIT);
       try {
-        if (!threadID) {
-          throw new Error("threadID is required and cannot be undefined");
-        }
-        threadID = validateThreadID(threadID);
-        if (!threadID) {
-          throw new Error("Invalid threadID");
-        }
+        threadID = validateId(threadID, ID_FIELD);
         const result = await Thread.destroy({ where: { threadID } });
-        if (result === 0) {
-          throw new Error("No thread found with the specified threadID");
-        }
+        if (result === 0) throw new Error("No thread found with the specified threadID");
         return result;
-      } catch (error) {
-        throw new Error(`Failed to delete thread: ${error.message}`);
+      } catch (err) {
+        throw wrapError("Failed to delete thread", err);
       }
     },
+
     async delAll() {
+      if (!Thread) return 0;
       try {
         return await Thread.destroy({ where: {} });
-      } catch (error) {
-        throw new Error(`Failed to delete all threads: ${error.message}`);
+      } catch (err) {
+        throw wrapError("Failed to delete all threads", err);
       }
     },
+
     async getAll(keys = null) {
+      if (!Thread) return [];
       try {
-        const attributes =
-          typeof keys === "string"
-            ? [keys]
-            : Array.isArray(keys)
-            ? keys
-            : undefined;
-        const threads = await Thread.findAll({ attributes });
-        return threads.map(thread => thread.get());
-      } catch (error) {
-        throw new Error(`Failed to get all threads: ${error.message}`);
+        const attributes = normalizeAttributes(keys);
+        const rows = await Thread.findAll({ attributes });
+        return rows.map((t) => t.get());
+      } catch (err) {
+        throw wrapError("Failed to get all threads", err);
       }
     }
   };
