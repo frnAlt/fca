@@ -4,3 +4,5 @@ a.js
 fca-config.json
 .env
 Fca_Database/
+*.sqlite
+dist/
