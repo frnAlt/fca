@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [Unreleased]
+
+---
+
+## [4.0.0] - 2026-04-11
+
+### Breaking changes
+
+- **License:** The package is now distributed under the **Apache License 2.0** instead of MIT. Review [LICENSE](./LICENSE) before upgrading if your compliance or redistribution policy depends on the previous license.
+
+### Documentation
+
+- Rewrote **README.md**, **DOCS.md**, and **docs/ARCHITECTURE.md** in English with full coverage of the public API: `createMessengerBot`, MQTT realtime, thread cache, namespaced client facade, composer middleware, events reference, and configuration.
+- Added API reference tables for all domains: messages, threads, users, account, HTTP, scheduler.
+
+---
+
 ## [3.0.29] - 2026-02-22
 
 - Maintenance release (hotfix / version bump).
@@ -287,10 +304,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+[4.0.0]: https://github.com/dongp06/fca-unofficial/compare/v3.0.31...v4.0.0
 [3.0.29]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.28...v3.0.29
 [3.0.28]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.27...v3.0.28
 [3.0.27]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.25...v3.0.27
 [1.0.10]: https://github.com/Donix-VN/fca-unofficial/releases/tag/v1.0.10
 
 ## v3.0.30 - 2026-03-07
+- Hotfix / auto bump
+
+## v3.0.31 - 2026-03-07
 - Hotfix / auto bump

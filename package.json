@@ -1,30 +1,32 @@
 {
   "name": "@dongdev/fca-unofficial",
-  "version": "3.0.31",
+  "version": "4.0.0",
   "description": "Unofficial Facebook Chat API for Node.js - Interact with Facebook Messenger programmatically",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./index.js",
-      "default": "./index.js",
-      "types": "./index.d.ts"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
     }
   },
   "files": [
-    "index.js",
-    "index.d.ts",
-    "module/",
-    "func/",
-    "src/",
-    "DOCS.md",
+    "dist/",
+    "docs/",
     "README.md",
+    "test/",
     "LICENSE",
-    "CHANGELOG.md"
+    "fca-config.example.json"
   ],
   "scripts": {
-    "test": "mocha",
-    "lint": "eslint ."
+    "test": "node ./test/fca.test.cjs",
+    "test:build": "npm run build && node ./test/fca.test.cjs",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean --out-dir dist --external gradient-string",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly"
   },
   "repository": {
     "type": "git",
@@ -46,8 +48,8 @@
     "fca"
   ],
   "author": {
-    "name": "DongDev",
-    "url": "https://www.facebook.com/mdong.dev"
+    "name": "Donix",
+    "url": "https://www.facebook.com/minhdong.dev"
   },
   "contributors": [
     {
@@ -55,32 +57,40 @@
       "url": "https://github.com/dongp06"
     }
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/dongp06/fca-unofficial/issues"
   },
   "homepage": "https://github.com/dongp06/fca-unofficial#readme",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.0.0"
   },
   "dependencies": {
     "axios": "^1.13.5",
     "axios-cookiejar-support": "^5.0.5",
     "bluebird": "^3.7.2",
-    "chalk": "^4.1.2",
+    "boxen": "^8.0.1",
     "cheerio": "^1.0.0-rc.10",
+    "cli-progress": "^3.12.0",
     "duplexify": "^4.1.3",
-    "gradient-string": "^2.0.2",
+    "gradient-string": "^3.0.0",
     "https-proxy-agent": "^4.0.0",
     "mqtt": "^4.3.8",
+    "ora": "^9.3.0",
+    "picocolors": "^1.1.1",
     "sequelize": "^6.37.6",
     "sqlite3": "^5.1.7",
     "totp-generator": "^1.0.0",
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "@types/duplexify": "^3.6.5",
+    "@types/node": "^24.6.1",
+    "@types/ws": "^8.18.1",
     "eslint": "^8.50.0",
-    "mocha": "^10.2.0"
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public",
