@@ -366,6 +366,13 @@ test("public exports are available", () => {
   assert.strictEqual(typeof fca.loadConfig, "function");
 });
 
+test("dist/cjs.cjs default export is callable login (Mirai / classic require)", () => {
+  const login = require("../dist/cjs.cjs");
+  assert.strictEqual(typeof login, "function");
+  assert.strictEqual(typeof login.login, "function");
+  assert.strictEqual(typeof login.createMessengerBot, "function");
+});
+
 test("resolveConfig honors legacy autoUpdate alias", () => {
   const resolved = fca.resolveConfig({
     autoUpdate: false,

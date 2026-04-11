@@ -134,10 +134,13 @@ const DEFAULT_LOGIN_OPTIONS: Required<Pick<
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 };
 
-export const login = async (
+/** Classic FCA-style callback receives the flat `api` object (same as `ctx.api`). */
+export type LoginApiCallback = (err: Error | null | undefined, api?: Loose) => void;
+
+export async function loginAsync(
   credentials: LoginCredentials,
   customOptions: FcaOptions = {}
-): Promise<FcaContext> => {
+): Promise<FcaContext> {
   const { config } = loadConfig();
   g.fca = g.fca || {};
   g.fca.config = config;
@@ -184,7 +187,56 @@ export const login = async (
   } catch { }
 
   return ctx;
-};
+}
+
+/**
+ * Login: Promise API, or legacy `login(credentials, (err, api) => …)` like classic FCA.
+ * For `const login = require('@dongdev/fca-unofficial')`, use the published `dist/cjs.cjs` entry.
+ */
+export function login(
+  credentials: LoginCredentials,
+  callback: LoginApiCallback
+): void;
+export function login(
+  credentials: LoginCredentials,
+  options: FcaOptions,
+  callback: LoginApiCallback
+): void;
+export function login(
+  credentials: LoginCredentials,
+  customOptions?: FcaOptions
+): Promise<FcaContext>;
+export function login(
+  credentials: LoginCredentials,
+  optionsOrCallback?: FcaOptions | LoginApiCallback,
+  callback?: LoginApiCallback
+): Promise<FcaContext> | void {
+  if (typeof optionsOrCallback === "function") {
+    const cb = optionsOrCallback;
+    void loginAsync(credentials, {})
+      .then((ctx) => {
+        cb(null, (ctx as Loose).api);
+      })
+      .catch((err: Loose) => {
+        cb(err instanceof Error ? err : new Error(String(err?.message ?? err)));
+      });
+    return;
+  }
+
+  if (typeof callback === "function") {
+    const opts = (optionsOrCallback || {}) as FcaOptions;
+    void loginAsync(credentials, opts)
+      .then((ctx) => {
+        callback!(null, (ctx as Loose).api);
+      })
+      .catch((err: Loose) => {
+        callback!(err instanceof Error ? err : new Error(String(err?.message ?? err)));
+      });
+    return;
+  }
+
+  return loginAsync(credentials, (optionsOrCallback || {}) as FcaOptions);
+}
 
 export function loginLegacy(
   credentials: LoginCredentials,
@@ -196,7 +248,7 @@ export function loginLegacy(
     options = {};
   }
 
-  const p = login(credentials, (options || {}) as FcaOptions);
+  const p = loginAsync(credentials, (options || {}) as FcaOptions);
   if (typeof callback === "function") {
     p.then((res) => callback?.(null, res)).catch((err) => callback?.(err));
     return;
@@ -242,5 +294,6 @@ export const setJarFromPairs = (
 ) => loginHelper.setJarFromPairs(jar, pairs, domain);
 
 export default login;
+
 
 

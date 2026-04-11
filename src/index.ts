@@ -1,10 +1,12 @@
 export {
   login,
+  loginAsync,
   loginLegacy,
   loginViaAPI,
   tokensViaAPI,
   normalizeCookieHeaderString,
-  setJarFromPairs
+  setJarFromPairs,
+  type LoginApiCallback
 } from "./core/auth";
 
 export { login as default } from "./core/auth";

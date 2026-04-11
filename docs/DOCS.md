@@ -63,7 +63,27 @@ Additional scripts:
 
 ## 2. Authentication
 
-### 2.1. `login()` — async, returns `FcaContext`
+### 2.1. `require()` default = `login` (classic FCA / Mirai)
+
+`package.json` points CommonJS `require` at `dist/cjs.cjs`, so the module itself **is** the `login` function (with all named exports copied onto it):
+
+```javascript
+const login = require("@dongdev/fca-unofficial");
+
+login({ appState: require("./appstate.json") }, (err, api) => {
+  if (err) return console.error(err);
+  api.setOptions({ listenEvents: true });
+  // api.getAppState(), api.listenMqtt(), …
+});
+```
+
+The callback receives **`api`** (flat legacy API), not `FcaContext`. For options + callback:
+
+```javascript
+login({ appState: [...] }, { listenEvents: true }, (err, api) => { ... });
+```
+
+### 2.2. `login()` — Promise, returns `FcaContext`
 
 ```typescript
 import { login } from "@dongdev/fca-unofficial";
@@ -75,7 +95,9 @@ const ctx = await login(
 const api = ctx.api;
 ```
 
-### 2.2. Credential strategies
+Use **`loginAsync`** if you need an explicit async function reference without overload resolution.
+
+### 2.3. Credential strategies
 
 | Field              | Description                                                                 |
 |--------------------|-----------------------------------------------------------------------------|
@@ -83,7 +105,7 @@ const api = ctx.api;
 | `Cookie`           | Raw cookie header string: `"c_user=...; xs=...; ..."`.                     |
 | `email` + `password` | Web login credentials. Easily triggers checkpoints; **not recommended** for production bots. |
 
-### 2.3. `loginLegacy()` — callback style
+### 2.4. `loginLegacy()` — callback with `FcaContext`
 
 ```javascript
 const { loginLegacy } = require("@dongdev/fca-unofficial");
@@ -95,11 +117,11 @@ loginLegacy({ appState: require("./appstate.json") }, (err, ctx) => {
 });
 ```
 
-### 2.4. Token-based login
+### 2.5. Token-based login
 
 `tokensViaAPI` and `loginViaAPI` authenticate through an external API server. Configure the `apiServer` and `credentials` fields in `fca-config.json`. See `src/core/auth.ts` for implementation details.
 
-### 2.5. Login options (`FcaOptions`)
+### 2.6. Login options (`FcaOptions`)
 
 | Option            | Type      | Default     | Description                                    |
 |-------------------|-----------|-------------|------------------------------------------------|
@@ -619,8 +641,9 @@ All public exports from `@dongdev/fca-unofficial`:
 
 | Export                          | Category       | Description                                       |
 |---------------------------------|----------------|---------------------------------------------------|
-| `login`                         | Auth           | Async login, returns `FcaContext`                  |
-| `loginLegacy`                   | Auth           | Callback-style login                              |
+| `login`                         | Auth           | Promise login **or** `login(cred, (err, api) => …)` / `login(cred, opts, cb)` (classic FCA) |
+| `loginAsync`                    | Auth           | Always `Promise<FcaContext>` (no callback overload) |
+| `loginLegacy`                   | Auth           | Callback receives `FcaContext`                    |
 | `loginViaAPI`                   | Auth           | Token-based login via external API                 |
 | `tokensViaAPI`                  | Auth           | Fetch tokens from external API                     |
 | `normalizeCookieHeaderString`   | Auth           | Normalize a raw cookie string                      |

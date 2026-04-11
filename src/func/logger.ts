@@ -43,8 +43,6 @@ type LoggerApi = LoggerFn & {
   persistLoginFail: (spinner: SpinnerLike | null) => void;
 };
 
-let didPrintBootBanner = false;
-let boxenLib: ((text: string, options?: Record<string, unknown>) => string) | null = null;
 let oraFactory: ((options: Record<string, unknown>) => SpinnerLike) | null = null;
 let progressCtor: (new (options: Record<string, unknown>, preset?: Record<string, unknown>) => ProgressLike) | null = null;
 let progressPreset: unknown = null;
@@ -85,8 +83,7 @@ function makeStyles(theme: ThemeName) {
       info: (v: string) => pc.cyan(v),
       warn: (v: string) => pc.yellow(v),
       error: (v: string) => pc.red(v),
-      sys: (v: string) => pc.blue(v),
-      banner: (v: string) => pc.white(v)
+      sys: (v: string) => pc.blue(v)
     };
   }
   return {
@@ -95,8 +92,7 @@ function makeStyles(theme: ThemeName) {
     info: (v: string) => pc.cyan(v),
     warn: (v: string) => pc.yellow(v),
     error: (v: string) => pc.red(v),
-    sys: (v: string) => pc.blue(v),
-    banner: (v: string) => pc.cyan(v)
+    sys: (v: string) => pc.blue(v)
   };
 }
 
@@ -133,24 +129,7 @@ function formatSuccessBody(body: string, grad: GradientFns | null, fallbackPaint
   return fallbackPaint(body);
 }
 
-function donixAsciiBlock(): string {
-  return [
-    "____ ____ ____ ____ ____",
-    "||D ||||O ||||N ||||I ||||X ||",
-    "||__||||__||||__||||__||||__||",
-    "|/__\\||/__\\||/__\\||/__\\||/__\\|"
-  ].join("\n");
-}
-
 async function ensureUiLibs() {
-  if (!boxenLib) {
-    try {
-      const boxenMod = await import("boxen");
-      boxenLib = (boxenMod.default ?? boxenMod) as (text: string, options?: Record<string, unknown>) => string;
-    } catch {
-      /* ignore */
-    }
-  }
   if (!oraFactory) {
     try {
       const oraMod = await import("ora");
@@ -172,59 +151,6 @@ async function ensureUiLibs() {
       /* ignore */
     }
   }
-}
-
-function printBootBanner(styles: ReturnType<typeof makeStyles>) {
-  if (didPrintBootBanner) return;
-  didPrintBootBanner = true;
-
-  const version = process.env.npm_package_version || "4.0.0";
-  const theme = getTheme();
-  const grad = theme === "cyberpunk" ? loadGradientFns() : null;
-
-  if (theme === "cyberpunk" && grad && boxenLib) {
-    const asciiStyled = grad.cyberpunk(donixAsciiBlock());
-    const titleLine = `${pc.bold(grad.coolStatus("FCA-UNOFFICIAL"))} ${pc.dim(`v${version}`)}`;
-    const body =
-      `${asciiStyled}\n` +
-      `${titleLine}\n` +
-      `${styles.text("Author:")} ${grad.coolStatus("DongDev (Donix-VN)")}\n` +
-      `${styles.text("Status:")} ${pc.green("Ready to Connect")}`;
-
-    writeStdout(
-      boxenLib(body, {
-        padding: 1,
-        margin: 0,
-        borderStyle: "double",
-        borderColor: "cyan"
-      })
-    );
-    return;
-  }
-
-  const art = [
-    "╔╦╗╔═╗╔╗╔╦═╗╦ ╦",
-    " ║║║ ║║║║╠╦╝╚╦╝",
-    "═╩╝╚═╝╝╚╝╩╚═ ╩  DONIX"
-  ].join("\n");
-  const body =
-    `${pc.bold(styles.info("FCA-UNOFFICIAL"))} ${pc.dim(`v${version}`)}\n` +
-    `${styles.text("Author:")} ${styles.info("DongDev (Donix-VN)")}\n` +
-    `${styles.text("Status:")} ${pc.green("Ready to Connect")}\n` +
-    `${styles.banner(art)}`;
-
-  if (boxenLib) {
-    writeStdout(
-      boxenLib(body, {
-        padding: 1,
-        margin: 0,
-        borderStyle: "round",
-        borderColor: "cyan"
-      })
-    );
-    return;
-  }
-  writeStdout(styles.banner(body));
 }
 
 function logLine(text: string, type?: string) {
@@ -283,8 +209,7 @@ baseLogger.warn = (text: string) => baseLogger(text, "warn");
 baseLogger.error = (text: string) => baseLogger(text, "error");
 
 baseLogger.showBanner = async () => {
-  await ensureUiLibs();
-  printBootBanner(makeStyles(getTheme()));
+  /* intentionally empty — no startup banner line */
 };
 
 baseLogger.startSpinner = async (text: string) => {

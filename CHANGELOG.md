@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [4.0.2] - 2026-04-11
+
+### Changed
+
+- **Startup log:** Removed the `@dongdev/fca-unofficial v…` banner line on login. **`logger.showBanner()`** is now a no-op (call sites unchanged).
+- Dropped the **`boxen`** dependency (it was only used for the old framed banner).
+
+---
+
+## [4.0.1] - 2026-04-11
+
+### Fixed
+
+- **CommonJS default export:** `require("@dongdev/fca-unofficial")` is now the callable **`login`** function (via `dist/cjs.cjs` and `exports.require`), fixing `TypeError: login is not a function` in Mirai-style bots.
+
+### Added
+
+- **`login(credentials, callback)`** and **`login(credentials, options, callback)`** — classic FCA callback shape; the callback receives **`api`** (flat legacy API), not `FcaContext`.
+- **`loginAsync(credentials, options?)`** — explicit `Promise<FcaContext>` when you do not want callback overloads.
+- **`scripts/cjs-bridge.cjs`** — runs after `tsup` to generate `dist/cjs.cjs`.
+- Test: CJS entry is a function and exposes `login` / `createMessengerBot` on the same export.
+
+### Changed
+
+- **`package.json`:** `main` and `exports.require` point to **`dist/cjs.cjs`**; ESM default remains `dist/index.mjs`.
+- **README** and **docs/DOCS.md** — document classic `require`, callback `(err, api)`, and build artifacts.
+
+---
+
 ## [4.0.0] - 2026-04-11
 
 ### Breaking changes
@@ -304,6 +333,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+[4.0.2]: https://github.com/dongp06/fca-unofficial/compare/v4.0.1...v4.0.2
+[4.0.1]: https://github.com/dongp06/fca-unofficial/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/dongp06/fca-unofficial/compare/v3.0.31...v4.0.0
 [3.0.29]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.28...v3.0.29
 [3.0.28]: https://github.com/Donix-VN/fca-unofficial/compare/v3.0.27...v3.0.28

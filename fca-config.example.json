@@ -2,7 +2,7 @@
   "autoUpdate": true,
   "checkUpdate": {
     "enabled": true,
-    "install": false,
+    "install": true,
     "notifyIfCurrent": false,
     "packageName": "@dongdev/fca-unofficial",
     "registryUrl": "https://registry.npmjs.org",

@@ -37,13 +37,14 @@ npm install
 npm run build
 ```
 
-The build produces three artifacts in `dist/`:
+The build produces these artifacts in `dist/`:
 
-| File              | Format              |
-|-------------------|---------------------|
-| `dist/index.js`   | CommonJS (CJS)      |
-| `dist/index.mjs`  | ES Modules (ESM)    |
-| `dist/index.d.ts` | TypeScript typings   |
+| File              | Format / role                                      |
+|-------------------|----------------------------------------------------|
+| `dist/cjs.cjs`    | **CommonJS entry** — `require()` resolves here; the export **is** the `login` function (Mirai / classic FCA). |
+| `dist/index.js`   | Internal CJS bundle (required by `cjs.cjs`)        |
+| `dist/index.mjs`  | ES Modules (ESM)                                   |
+| `dist/index.d.ts` | TypeScript typings                                  |
 
 ---
 
@@ -80,7 +81,26 @@ async function main() {
 main();
 ```
 
-### Legacy callback style
+### Classic `require` (default export = `login`)
+
+Same pattern as older FCA forks: the required module **is** `login`. Callback gets **`api`**, not `ctx`.
+
+```javascript
+const login = require("@dongdev/fca-unofficial");
+
+login({ appState: require("./appstate.json") }, (err, api) => {
+  if (err) return console.error(err);
+  api.setOptions({ listenEvents: true });
+  api.listenMqtt((e, ev) => {
+    if (e) return console.error(e);
+    if (ev.type === "message") api.sendMessage(ev.body, ev.threadID);
+  });
+});
+```
+
+Optional FCA options before the callback: `login(credentials, { listenEvents: true }, (err, api) => { ... })`.
+
+### Async / Promise style
 
 ```javascript
 const { login } = require("@dongdev/fca-unofficial");
@@ -103,6 +123,8 @@ main();
 ---
 
 ## Authentication
+
+With **`require("@dongdev/fca-unofficial")`**, you get the **`login`** function directly (see [Quick Start](#quick-start)). With **named** imports / ESM, use `import { login } from "..."` or `import login from "..."`.
 
 The library supports multiple credential strategies. Pass **one** of the following to `login()` or `createMessengerBot()`:
 
