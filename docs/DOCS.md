@@ -371,7 +371,9 @@ await client.messages.send("Hi from the facade!", threadID);
 
 ## 6. Configuration File (`fca-config.json`)
 
-Copy the example and customize:
+On first load, if `fca-config.json` is missing in the process current working directory, the library **creates** it with default values (pretty-printed JSON). If the filesystem is read-only or creation fails, it falls back to in-memory defaults.
+
+You can still start from the shipped example:
 
 ```bash
 cp fca-config.example.json fca-config.json
@@ -385,8 +387,8 @@ cp fca-config.example.json fca-config.json
 {
   "checkUpdate": {
     "enabled": true,
-    "install": false,
-    "notifyIfCurrent": false,
+    "install": true,
+    "notifyIfCurrent": true,
     "packageName": "@dongdev/fca-unofficial",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000
@@ -442,7 +444,7 @@ Used by `autoLogin` and `loginViaAPI` for automatic session recovery.
 }
 ```
 
-When enabled, `getThreadInfo` and `getUserInfo` use SQLite-backed caching to reduce repeated GraphQL requests to Facebook.
+When **`AntiGetUserInfo`** is `false` (default), `getUserInfo` uses SQLite-backed caching and GraphQL. Set it to `true` to use only the legacy `/chat/user_info/` HTTP flow. **`AntiGetThreadInfo`** is kept for compatibility; core `getThreadInfo` uses the SQLite + GraphQL path regardless of this flag for now.
 
 #### `remoteControl`
 

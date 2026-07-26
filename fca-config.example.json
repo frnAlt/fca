@@ -3,7 +3,7 @@
   "checkUpdate": {
     "enabled": true,
     "install": true,
-    "notifyIfCurrent": false,
+    "notifyIfCurrent": true,
     "packageName": "@dongdev/fca-unofficial",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000
@@ -29,5 +29,9 @@
     "url": "",
     "token": "",
     "autoReconnect": true
+  },
+  "threadCache": {
+    "maxAgeMs": 900000,
+    "invalidateIntervalMs": 900000
   }
 }

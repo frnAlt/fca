@@ -268,7 +268,9 @@ When `stopOnSignals` is `true`, the bot automatically calls `stop()` on `SIGINT`
 
 ## Configuration
 
-Copy the example config and edit it:
+If `fca-config.json` is missing in the process working directory, it is **created automatically** with defaults on first load (or in-memory defaults only if the file cannot be written).
+
+You can also copy the example and edit it:
 
 ```bash
 cp fca-config.example.json fca-config.json
