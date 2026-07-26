@@ -1,7 +1,7 @@
 {
-  "name": "@dongdev/fca-unofficial",
-  "version": "4.0.3",
-  "description": "Unofficial Facebook Chat API for Node.js - Interact with Facebook Messenger programmatically",
+  "name": "@floppa/fca-native",
+  "version": "5.0.0",
+  "description": "Native Floppa-Chatbot Facebook Chat API Engine - High performance, modern 24/7 Messenger API",
   "main": "dist/cjs.cjs",
   "types": "dist/index.d.ts",
   "exports": {
@@ -21,35 +21,26 @@
     "fca-config.example.json"
   ],
   "scripts": {
-    "test": "node ./test/fca.test.cjs",
-    "test:build": "npm run build && node ./test/fca.test.cjs",
-    "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean --out-dir dist --external gradient-string && node scripts/cjs-bridge.cjs",
-    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly"
+    "test": "node ./test/fca.test.cjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dongp06/fca-unofficial.git"
+    "url": "git+https://github.com/frnAlt/Floppa-Chatbot.git"
   },
   "keywords": [
+    "floppa",
+    "floppa-chatbot",
     "facebook",
     "chat",
     "api",
     "messenger",
     "bot",
-    "unofficial",
-    "automation",
-    "facebook-api",
-    "facebook-chat",
-    "facebook-messenger",
-    "chatbot",
-    "nodejs",
-    "fca"
+    "fca",
+    "gtajisan"
   ],
   "author": {
-    "name": "Donix",
-    "url": "https://www.facebook.com/minhdong.dev"
+    "name": "Gtajisan (Farhan Muh Tasim)",
+    "url": "https://github.com/frnAlt"
   },
   "contributors": [
     {
