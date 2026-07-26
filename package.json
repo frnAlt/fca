@@ -25,7 +25,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frnAlt/Floppa-Chatbot.git"
+    "url": "git+https://github.com/frnAlt/Floppa-Chatbot.git",
+    "directory": "fca"
   },
   "keywords": [
     "floppa",
