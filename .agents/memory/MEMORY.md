@@ -1,2 +1,0 @@
-- [Double Ratchet initReceiver](dr-init-receiver.md) — responder MUST pass initialDHs (signed prekey pair) to initReceiver(); omitting it → null-deref on first decrypt.
-- [Comprehensive bug fix audit](bug-fix-audit.md) — 20 bugs fixed across the full codebase; see file for categories.
