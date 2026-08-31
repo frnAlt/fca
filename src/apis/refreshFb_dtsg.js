@@ -1,0 +1,100 @@
+"use strict";
+
+const utils = require("../utils");
+
+/**
+ * Refreshes the `fb_dtsg` and `jazoest` security tokens in the current session.
+ *
+ * Two modes:
+ *   1. Called with no arguments (or just a callback) — fetches a fresh token by
+ *      loading the Facebook homepage and parsing the token from the HTML.
+ *   2. Called with a payload object — directly assigns the provided fields to ctx.
+ *
+ * @example
+ * // Auto-refresh from Facebook:
+ * await api.refreshFb_dtsg();
+ *
+ * // Manual override:
+ * await api.refreshFb_dtsg({ fb_dtsg: "newToken", jazoest: "12345" });
+ *
+ * @param {object|Function} [payload]  Object with { fb_dtsg?, jazoest?, lsd? }, or callback.
+ * @param {Function}        [callback]
+ * @returns {Promise<{ data: object, message: string }>}
+ */
+module.exports = function (defaultFuncs, api, ctx) {
+  return function refreshFb_dtsg(payload, callback) {
+    let opts  = payload;
+    let cb    = callback;
+
+    if (typeof payload === "function") {
+      cb   = payload;
+      opts = {};
+    }
+    if (!opts) opts = {};
+
+    if (utils.getType(opts) !== "Object") {
+      throw new Error("The first parameter must be an object or a callback function");
+    }
+
+    let resolveFunc, rejectFunc;
+    const promise = new Promise((resolve, reject) => {
+      resolveFunc = resolve;
+      rejectFunc  = reject;
+    });
+    if (!cb) {
+      cb = (err, data) => { if (err) return rejectFunc(err); resolveFunc(data); };
+    }
+
+    if (Object.keys(opts).length === 0) {
+      // ── Auto-refresh: parse from Facebook HTML ────────────────────
+      defaultFuncs
+        .get("https://www.facebook.com/", ctx.jar, { noRef: true })
+        .then((res) => {
+          const html = typeof res === "string" ? res : (res && res.body ? res.body : (res && res.data ? res.data : ""));
+
+          const fb_dtsg = utils.getFrom(html, '["DTSGInitData",[],{"token":"', '","') ||
+                          utils.getFrom(html, '"fb_dtsg":{"token":"', '"') ||
+                          utils.getFrom(html, 'name="fb_dtsg" value="', '"');
+          const jazoest = utils.getFrom(html, "jazoest=", '"') ||
+                          utils.getFrom(html, '"jazoest":"', '"');
+
+          if (!fb_dtsg) throw new Error("Could not find fb_dtsg in HTML. Session may have expired.");
+
+          // Recalculate ttstamp whenever fb_dtsg changes — ttstamp = "2" followed
+          // by the concatenation of each character's char code (NOT their sum).
+          // Leaving ttstamp stale after a token refresh causes request signature
+          // mismatches that Facebook detects as bot-like behaviour.
+          const ttstamp = "2" + Array.from(fb_dtsg).map(c => c.charCodeAt(0)).join("");
+
+          const updated = { fb_dtsg, ttstamp };
+          if (jazoest) updated.jazoest = jazoest;
+
+          Object.assign(ctx, updated);
+
+          const result = {
+            data:    updated,
+            message: "Refreshed fb_dtsg" + (jazoest ? " and jazoest" : ""),
+          };
+          cb(null, result);
+        })
+        .catch((err) => {
+          utils.error("refreshFb_dtsg", err.message || err);
+          cb(err instanceof Error ? err : new Error(String(err.message || err)));
+        });
+    } else {
+      // ── Manual override: apply provided fields directly ───────────
+      const allowed = ["fb_dtsg", "jazoest", "lsd", "clientID", "userID"];
+      const filtered = {};
+      for (const key of allowed) {
+        if (key in opts) filtered[key] = opts[key];
+      }
+      Object.assign(ctx, filtered);
+      cb(null, {
+        data:    filtered,
+        message: `Updated: ${Object.keys(filtered).join(", ")}`,
+      });
+    }
+
+    return promise;
+  };
+};

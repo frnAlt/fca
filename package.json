@@ -18,7 +18,10 @@
     "README.md",
     "test/",
     "LICENSE",
-    "fca-config.example.json"
+    "fca-config.example.json",
+    "src/",
+    "assets/",
+    "index.js"
   ],
   "scripts": {
     "test": "node ./test/fca.test.cjs"
@@ -37,7 +40,8 @@
     "messenger",
     "bot",
     "fca",
-    "gtajisan"
+    "gtajisan",
+    "metachat"
   ],
   "author": {
     "name": "Gtajisan (Farhan Muh Tasim)",
@@ -47,32 +51,44 @@
     {
       "name": "DongDev",
       "url": "https://github.com/dongp06"
+    },
+    {
+      "name": "NeoKEX",
+      "url": "https://github.com/lazyneoaz"
     }
   ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/dongp06/fca-unofficial/issues"
+    "url": "https://github.com/frnAlt/Floppa-Chatbot/issues"
   },
-  "homepage": "https://github.com/dongp06/fca-unofficial#readme",
+  "homepage": "https://github.com/frnAlt/Floppa-Chatbot#readme",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
-    "axios": "^1.13.5",
+    "axios": "^1.19.0",
     "axios-cookiejar-support": "^5.0.5",
     "bluebird": "^3.7.2",
-    "cheerio": "^1.0.0-rc.10",
+    "cheerio": "^1.2.0",
     "cli-progress": "^3.12.0",
+    "deepdash": "^5.3.9",
     "duplexify": "^4.1.3",
+    "form-data": "^4.0.6",
     "gradient-string": "^3.0.0",
-    "https-proxy-agent": "^4.0.0",
+    "https-proxy-agent": "^7.0.6",
+    "jsonpath-plus": "^10.4.0",
+    "lodash": "^4.18.1",
     "mqtt": "^4.3.8",
+    "node-cron": "^3.0.3",
     "ora": "^9.3.0",
     "picocolors": "^1.1.1",
-    "sequelize": "^6.37.6",
-    "sqlite3": "^6.0.1",
-    "totp-generator": "^1.0.0",
-    "ws": "^8.18.1"
+    "sequelize": "^6.37.8",
+    "sqlite3": "^5.1.7",
+    "totp-generator": "^2.0.1",
+    "tough-cookie": "^4.1.4",
+    "undici": "^7.29.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.21.3"
   },
   "overrides": {
     "tar": "^7.5.3",
