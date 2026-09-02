@@ -224,10 +224,32 @@ module.exports = (defaultFuncs, api, ctx) => {
     if (!callback && (utils.getType(threadID) === "Function" || utils.getType(threadID) === "AsyncFunction")) {
       throw new Error("Pass a threadID as a second argument.");
     }
-    if (!replyToMessage && utils.getType(callback) === "String") {
-      replyToMessage = callback;
-      callback = undefined;
+
+    let actualCallback = undefined;
+    let actualReplyTo = undefined;
+    let actualIsGroup = isGroup;
+
+    if (typeof callback === "function") {
+      actualCallback = callback;
+      if (typeof replyToMessage === "string") actualReplyTo = replyToMessage;
+      else if (typeof replyToMessage === "boolean") actualIsGroup = replyToMessage;
+    } else if (typeof callback === "string") {
+      actualReplyTo = callback;
+      if (typeof replyToMessage === "function") actualCallback = replyToMessage;
+      else if (typeof replyToMessage === "boolean") actualIsGroup = replyToMessage;
+    } else if (typeof callback === "boolean") {
+      actualIsGroup = callback;
+      if (typeof replyToMessage === "function") actualCallback = replyToMessage;
+      else if (typeof replyToMessage === "string") actualReplyTo = replyToMessage;
+    } else {
+      if (typeof replyToMessage === "function") actualCallback = replyToMessage;
+      else if (typeof replyToMessage === "string") actualReplyTo = replyToMessage;
+      else if (typeof replyToMessage === "boolean") actualIsGroup = replyToMessage;
     }
+
+    callback = actualCallback;
+    replyToMessage = actualReplyTo;
+    isGroup = actualIsGroup;
 
     let resolveFunc = () => {};
     let rejectFunc = () => {};
@@ -305,21 +327,21 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         const isMultiRecipient = Array.isArray(threadID);
-        // Use one transport for each mutation. If the result is ambiguous,
-        // sending through a second transport can duplicate the message when
-        // the first request was accepted but its acknowledgement was lost.
         const usedMqtt = mqttReady && !isMultiRecipient && api.sendMessageMqtt;
 
         let result;
         if (usedMqtt) {
-          result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
+          try {
+            result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
+          } catch (mqttErr) {
+            // Fallback to HTTP on any MQTT delivery failure
+            result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+          }
         } else {
           result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
         }
         callback(null, result);
       } catch (sendErr) {
-        // Do not cross-submit an account mutation after an uncertain result.
-        // The caller can inspect the error and reconcile by message ID.
         callback(sendErr);
       } finally {
         // Stop typing indicator regardless of success or failure.

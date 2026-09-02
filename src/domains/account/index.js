@@ -144,21 +144,96 @@ class AccountDomain extends Domain {
     }
 
     /**
-     * Enable auto-save app state
+     * Get current user ID
      */
-    async enableAutoSaveAppState(path, interval, callback) {
+    getCurrentUserID(callback) {
+        if (typeof this.api.getCurrentUserID === "function") {
+            const res = this.api.getCurrentUserID();
+            if (typeof callback === "function") callback(null, res);
+            return res;
+        }
+        return null;
+    }
+
+    /**
+     * Get current app state
+     */
+    getAppState(callback) {
+        if (typeof this.api.getAppState === "function") {
+            const res = this.api.getAppState();
+            if (typeof callback === "function") callback(null, res);
+            return res;
+        }
+        return null;
+    }
+
+    /**
+     * Set post reaction
+     */
+    async setPostReaction(postID, reaction, callback) {
         const context = {
-            operation: "enableAutoSaveAppState",
-            path,
-            interval,
+            operation: "setPostReaction",
+            postID,
+            reaction,
             timestamp: Date.now()
         };
 
-        await this.executeMiddleware(context, "enableAutoSaveAppState");
+        await this.executeMiddleware(context, "setPostReaction");
 
         if (context.error) throw context.error;
 
-        return this.api.enableAutoSaveAppState(path, interval, callback);
+        return this.api.setPostReaction(postID, reaction, callback);
+    }
+
+    /**
+     * Refresh fb_dtsg
+     */
+    async refreshDtsg(callback) {
+        const context = {
+            operation: "refreshDtsg",
+            timestamp: Date.now()
+        };
+
+        await this.executeMiddleware(context, "refreshDtsg");
+
+        if (context.error) throw context.error;
+
+        return this.api.refreshFb_dtsg?.(callback);
+    }
+
+    /**
+     * Change blocked status
+     */
+    async changeBlocked(userID, blocked, callback) {
+        return this.api.changeBlockedStatus?.(userID, blocked, callback);
+    }
+
+    /**
+     * Handle friend request
+     */
+    async handleFriendReq(userID, accept, callback) {
+        return this.api.handleFriendRequest?.(userID, accept, callback);
+    }
+
+    /**
+     * Unfriend
+     */
+    async unfriend(userID, callback) {
+        return this.api.unfriend?.(userID, callback);
+    }
+
+    /**
+     * Add module alias
+     */
+    async addModule(path, callback) {
+        return this.addExternalModule(path, callback);
+    }
+
+    /**
+     * Enable auto save alias
+     */
+    async enableAutoSave(path, interval, callback) {
+        return this.enableAutoSaveAppState(path, interval, callback);
     }
 }
 

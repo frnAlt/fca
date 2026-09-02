@@ -245,10 +245,22 @@ module.exports = (defaultFuncs, api, ctx) => {
       throw new Error("Pass a threadID as a second argument.");
     }
 
-    if (!callback && typeof replyToMessage === "function") {
-      callback = replyToMessage;
-      replyToMessage = null;
+    let actualCallback = null;
+    let actualReplyTo = null;
+
+    if (typeof replyToMessage === "function") {
+      actualCallback = replyToMessage;
+      actualReplyTo = typeof callback === "string" ? callback : null;
+    } else if (typeof callback === "function") {
+      actualCallback = callback;
+      actualReplyTo = typeof replyToMessage === "string" ? replyToMessage : null;
+    } else {
+      if (typeof replyToMessage === "string") actualReplyTo = replyToMessage;
+      else if (typeof callback === "string") actualReplyTo = callback;
     }
+
+    callback = actualCallback;
+    replyToMessage = actualReplyTo;
 
     try {
       await antiSuspension.prepareBeforeMessage(String(threadID), typeof msg === 'string' ? msg : (msg.body || ''));

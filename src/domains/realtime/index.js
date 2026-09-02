@@ -28,6 +28,22 @@ class RealtimeDomain extends Domain {
     }
 
     /**
+     * Stop listening for realtime events
+     */
+    async stopListening(callback) {
+        const context = {
+            operation: "stopListening",
+            timestamp: Date.now()
+        };
+
+        await this.executeMiddleware(context, "stopListening");
+
+        if (context.error) throw context.error;
+
+        return this.api.stopListening ? this.api.stopListening(callback) : undefined;
+    }
+
+    /**
      * Listen with speed optimization
      */
     async listenSpeed(onUpdateCallback, onErrorCallback) {

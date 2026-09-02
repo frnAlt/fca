@@ -406,7 +406,7 @@ function runMethodLoadProgress(files, loadFn) {
   }
 
   files.forEach((f, idx) => {
-    try { loadFn(f); } catch (_) {}
+    try { loadFn(f); } catch (err) { warn(`Failed to load module ${f}: ${err && err.message ? err.message : err}`); }
     if (bar) bar.update(idx + 1);
   });
 

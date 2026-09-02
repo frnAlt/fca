@@ -58,6 +58,17 @@ function hybridLogin(credentials, options, callback) {
 }
 
 Object.assign(hybridLogin, m);
+hybridLogin.login = hybridLogin;
+hybridLogin.loginAsync = async (credentials, options) => {
+  const api = await hybridLogin(credentials, options);
+  const userID = api?.getCurrentUserID ? String(api.getCurrentUserID()) : ((api?.ctx && api.ctx.userID) || "");
+  return {
+    api,
+    userID,
+    cookieString: api?.getAppState ? JSON.stringify(api.getAppState()) : "",
+    ctx: api?.ctx || {}
+  };
+};
 if (extendFCA) {
   hybridLogin.extendFCA = extendFCA;
   hybridLogin.ConduitMessageBuilder = extendFCA.ConduitMessageBuilder;
