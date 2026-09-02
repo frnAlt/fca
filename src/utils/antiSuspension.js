@@ -4,8 +4,7 @@
  * Anti-Suspension Module
  * Comprehensive protection against Facebook bot account suspension.
  * Designed to be fast (single-delay model) yet stealth.
- *
- * Credits: NeoKEX — https://github.com/lazyneoaz — https://neoaz.is-a.dev
+ * Developed for Floppa-Chatbot by frnAlt
  */
 
 const SUSPENSION_SIGNALS = [

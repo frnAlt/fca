@@ -60,7 +60,7 @@ async function runConfiguredUpdateCheck(config, logger) {
     const log = typeof logger === "function" ? logger : () => {};
     if (!config || !config.checkUpdate || !config.checkUpdate.enabled) return;
 
-    const pkg = config.checkUpdate.packageName || "@lazyneoaz/metachat";
+    const pkg = config.checkUpdate.packageName || "@floppa/fca-native";
     let currentVersion = "unknown";
     try {
         currentVersion = require("../../package.json").version;

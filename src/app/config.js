@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
         enabled: false,
         install: false,
         notifyIfCurrent: false,
-        packageName: "@lazyneoaz/metachat",
+        packageName: "@floppa/fca-native",
         registryUrl: "https://registry.npmjs.org",
         timeoutMs: 10000,
     },

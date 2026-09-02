@@ -423,9 +423,9 @@ function readLocalPackage() {
     const pkgPath = path.resolve(__dirname, "..", "..", "package.json");
     const data = fs.readFileSync(pkgPath, "utf8");
     const json = JSON.parse(data);
-    return { name: json.name || "@lazyneoaz/metachat", version: json.version || "1.0.0" };
+    return { name: json.name || "@floppa/fca-native", version: json.version || "5.0.0" };
   } catch (_) {
-    return { name: "@lazyneoaz/metachat", version: "1.0.0" };
+    return { name: "@floppa/fca-native", version: "5.0.0" };
   }
 }
 
@@ -454,28 +454,16 @@ async function checkLatestVersion(pkgName) {
 function version() {
   if (!shouldLog('info')) return;
   const { name, version: ver } = readLocalPackage();
-  log(`${name} v${ver}`);
-  Promise.resolve()
-    .then(() => checkLatestVersion(name))
-    .then((latest) => {
-      if (!latest) return;
-      if (latest !== ver) {
-        warn(`New version available: v${latest}. Update: npm i ${name}@latest`);
-      } else {
-        log(`You are on the latest version (v${ver})`);
-      }
-    })
-    .catch(() => {});
+  log(`${name} v${ver} (Native Local Engine)`);
 }
 
 function credits() {
   if (!shouldLog('info')) return;
   const { name, version: ver } = readLocalPackage();
-  console.log(applyTheme(`${name} v${ver}`));
-  console.log(pc.dim('  Developed and maintained by NeoKEX'));
-  console.log(pc.dim('  GitHub  : https://github.com/lazyneoaz'));
-  console.log(pc.dim('  Website : https://neoaz.is-a.dev'));
-  console.log(pc.dim(`  npm     : https://www.npmjs.com/package/${name}`));
+  console.log(applyTheme(`  ${name} v${ver}`));
+  console.log(pc.dim('  Developed and maintained by frnAlt'));
+  console.log(pc.dim('  GitHub  : https://github.com/frnAlt/Floppa-Chatbot'));
+  console.log(pc.dim(`  Package : ${name} (Native Local FCA)`));
 }
 
 function startupBanner() {
