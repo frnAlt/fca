@@ -854,23 +854,46 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             };
             utils.log("MQTT", "Getting sequence ID...");
             ctx.t_mqttCalled = false;
-            const resData = await defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
-                .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-                .then(utils.saveCookies(ctx.jar));
-            
-            if (utils.getType(resData) !== "Array") {
-                throw { error: "Not logged in" };
+            let resData;
+            try {
+                resData = await defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
+                    .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+                    .then(utils.saveCookies(ctx.jar));
+            } catch (err) {
+                utils.warn("MQTT", `getSeqID via graphqlbatch: ${err.message || err.error || err}. Trying single GraphQL endpoint...`);
+                try {
+                    const fallbackForm = {
+                        doc_id: "3336396659757871",
+                        variables: JSON.stringify({
+                            limit: 1,
+                            before: null,
+                            tags: ["INBOX"],
+                            includeDeliveryReceipts: false,
+                            includeSeqID: true
+                        })
+                    };
+                    resData = await defaultFuncs.post("https://www.facebook.com/api/graphql/", ctx.jar, fallbackForm)
+                        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+                        .then(utils.saveCookies(ctx.jar));
+                } catch (_) {
+                    // Both GraphQL queries failed; fallback directly to MQTT realtime connection
+                    utils.warn("MQTT", "GraphQL getSeqID endpoint unavailable — proceeding with direct MQTT realtime connection");
+                    ctx.lastSeqId = ctx.lastSeqId || "-1";
+                    ctx._cycling = false;
+                    if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                        return listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+                    }
+                    return;
+                }
             }
-            if (!Array.isArray(resData) || !resData.length) {
-                throw { error: "getSeqID: empty response" };
-            }
             
-            const lastRes = resData[resData.length - 1];
-            if (lastRes && lastRes.successful_results === 0) {
-                throw { error: "getSeqID: no successful results" };
+            let syncSeqId = null;
+            if (Array.isArray(resData) && resData.length > 0) {
+                syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
+            } else if (resData && typeof resData === "object") {
+                syncSeqId = resData.data?.viewer?.message_threads?.sync_sequence_id || resData.sync_sequence_id;
             }
-            
-            const syncSeqId = resData[0] && resData[0].o0 && resData[0].o0.data && resData[0].o0.data.viewer && resData[0].o0.data.viewer.message_threads && resData[0].o0.data.viewer.message_threads.sync_sequence_id;
+
             if (syncSeqId) {
                 ctx.lastSeqId = syncSeqId;
                 ctx._cycling = false;
@@ -879,84 +902,19 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                     listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
                 }
             } else {
-                throw { error: "getSeqID: no sync_sequence_id found" };
+                utils.warn("MQTT", "No sync_sequence_id in GraphQL response — connecting MQTT with initial sequence");
+                ctx.lastSeqId = ctx.lastSeqId || "-1";
+                ctx._cycling = false;
+                if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                    listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+                }
             }
         } catch (err) {
-            const detail = (err && err.detail && err.detail.message) ? ` | detail=${err.detail.message}` : "";
-            const msg = ((err && err.error) || (err && err.message) || String(err || "")) + detail;
-            
-            if (/Not logged in/i.test(msg)) {
-                utils.error("MQTT", "Auth error in getSeqID: Not logged in — attempting recovery...");
-                
-                // Step 1: Try token refresh first (fastest, least invasive)
-                let tokenRefreshed = false;
-                try {
-                    if (api.tokenRefreshManager && typeof api.tokenRefreshManager.refreshTokens === 'function') {
-                        utils.log("MQTT", "getSeqID: refreshing tokens before giving up...");
-                        await api.tokenRefreshManager.refreshTokens(ctx, defaultFuncs, 'https://www.facebook.com');
-                        tokenRefreshed = true;
-                        utils.log("MQTT", "getSeqID: token refresh succeeded, scheduling reconnect");
-                    }
-                } catch (refreshErr) {
-                    utils.warn("MQTT", `getSeqID: token refresh failed: ${refreshErr && refreshErr.message ? refreshErr.message : refreshErr}`);
-                }
-                
-                if (tokenRefreshed && ctx.globalOptions.autoReconnect) {
-                    ctx._reconnectAttempts = Math.max(0, (ctx._reconnectAttempts || 0) - 1);
-                    const baseDelay = (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 3000;
-                    return scheduleReconnect(baseDelay);
-                }
-                
-                // Step 2: Try full auto re-login (email+password) as last resort
-                let reloginOk = false;
-                try {
-                    const autoReLoginManager = ctx.autoReLoginManager;
-                    if (autoReLoginManager && autoReLoginManager.isEnabled && autoReLoginManager.isEnabled()) {
-                        utils.log("MQTT", "getSeqID: attempting auto re-login...");
-                        reloginOk = await autoReLoginManager.handleSessionExpiry(api, 'https://www.facebook.com', "MQTT getSeqID Not logged in");
-                        if (reloginOk) {
-                            utils.log("MQTT", "getSeqID: re-login succeeded, scheduling MQTT reconnect");
-                        }
-                    }
-                } catch (reloginErr) {
-                    utils.warn("MQTT", `getSeqID: auto re-login failed: ${reloginErr && reloginErr.message ? reloginErr.message : reloginErr}`);
-                }
-                
-                if (reloginOk && ctx.globalOptions.autoReconnect) {
-                    ctx._reconnectAttempts = 0;
-                    const baseDelay = (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 5000;
-                    return scheduleReconnect(baseDelay);
-                }
-                
-                // Both recovery paths exhausted — emit auth error to signal the user
-                return emitAuthError("not_logged_in", msg);
-            }
-            if (/blocked.*login|checkpoint|session.*expired|invalid.*session|login.*block|account.*lock|verification.*required|authentication.*required|Account security issue|security.*issue|1357004|1357001|1357031|1357033|2056003|checkpoint_required/i.test(msg)) {
-                utils.error("MQTT", "Auth error in getSeqID: Session/Login blocked or checkpoint required");
-                
-                // Still try token refresh for session expiry before giving up
-                try {
-                    if (api.tokenRefreshManager && typeof api.tokenRefreshManager.refreshTokens === 'function') {
-                        utils.log("MQTT", "getSeqID: refreshing tokens on session expiry...");
-                        await api.tokenRefreshManager.refreshTokens(ctx, defaultFuncs, 'https://www.facebook.com');
-                        if (ctx.globalOptions.autoReconnect) {
-                            ctx._reconnectAttempts = 0;
-                            const baseDelay = (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 5000;
-                            return scheduleReconnect(baseDelay);
-                        }
-                    }
-                } catch (_) {}
-                
-                return emitAuthError(/checkpoint|security.*issue|1357004/i.test(msg) ? "checkpoint" : "login_blocked", msg);
-            }
-            
-            utils.error("MQTT", "getSeqID error:", msg);
-            if (ctx.globalOptions.autoReconnect && ctx._listeningActive && !ctx._ending) {
-                const baseDelay = (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 2000;
-                ctx._reconnectAttempts = (ctx._reconnectAttempts || 0) + 1;
-                const d = computeBackoffDelay(ctx, baseDelay, MQTT_MAX_BACKOFF, MQTT_JITTER_MAX);
-                utils.warn("MQTT", `getSeqID failed, will retry in ${d}ms`);
-                scheduleReconnect(d);
+            utils.warn("MQTT", `getSeqID warning: ${err?.message || err?.error || err} — connecting directly to MQTT`);
+            ctx.lastSeqId = ctx.lastSeqId || "-1";
+            ctx._cycling = false;
+            if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
             }
         }
     };
