@@ -5,7 +5,7 @@ const axios = require("axios");
 const path = require('path');
 const fs = require('fs');
 const qs = require("querystring");
-const { normalizeCookieHeaderString, setJarFromPairs, setJarFromCookies } = require('../../utils/formatters/value/formatCookie');
+const { normalizeCookieHeaderString, setJarFromPairs, setJarFromCookies, parseUniversalCookies } = require('../../utils/formatters/value/formatCookie');
 const { parseRegion, genTotp } = require('../../utils/auth-helpers');
 const { generateUserAgentByPersona, cachePersonaData } = require('../../utils/user-agents');
 
@@ -205,28 +205,20 @@ async function loginHelper(credentials, globalOptions, callback, setOptionsFunc,
         }
 
         if (appState) {
-            let cookieStrings = [];
-            if (Array.isArray(appState)) {
-                const cookieObjects = appState.filter(c => c && typeof c === 'object');
-                if (cookieObjects.length) {
-                    setJarFromCookies(jar, cookieObjects);
-                    cookieStrings = [];
-                } else {
-                    cookieStrings = appState.filter(Boolean).map(String);
-                }
+            const normalizedCookies = parseUniversalCookies(appState);
+            if (normalizedCookies.length > 0) {
+                setJarFromCookies(jar, normalizedCookies);
             } else if (typeof appState === 'string') {
-                cookieStrings = normalizeCookieHeaderString(appState);
-
-                if (cookieStrings.length === 0) {
-                    cookieStrings = appState.split(';').map(s => s.trim()).filter(Boolean);
+                const cookieStrings = normalizeCookieHeaderString(appState);
+                if (cookieStrings.length) {
+                    setJarFromPairs(jar, cookieStrings);
                 }
+            } else if (Array.isArray(appState)) {
+                setJarFromCookies(jar, appState);
             } else {
-                throw new Error("Invalid appState format. Please provide an array of cookie objects or a cookie string.");
+                throw new Error("Invalid appState format. Please provide an array of cookie objects, stock cookie string, or JSON dictionary.");
             }
 
-            if (cookieStrings.length) {
-                setJarFromPairs(jar, cookieStrings);
-            }
             if (!jar.getCookiesSync("https://www.facebook.com").length) {
                 throw new Error("No usable cookies were found in appState.");
             }

@@ -140,6 +140,7 @@ module.exports = {
     formatID,
     formatDate,
     formatCookie,
+    parseUniversalCookies: formatCookie.parseUniversalCookies,
     formatAttachment,
     _formatAttachment,
     formatDeltaMessage,
