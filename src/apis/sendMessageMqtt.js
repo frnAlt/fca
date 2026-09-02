@@ -221,14 +221,14 @@ module.exports = (defaultFuncs, api, ctx) => {
         }
       });
       
-      // Set timeout to prevent hanging connections
+      // Set timeout to prevent hanging connections (fast HTTP fallback on timeout)
       responseTimeout = setTimeout(() => {
         if (done) return;
         cleanup();
         const err = { error: "Timeout waiting for ACK" };
         if (callback) callback(err);
         reject(err);
-      }, 15000);
+      }, 2500);
     });
   }
 

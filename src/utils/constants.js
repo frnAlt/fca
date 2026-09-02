@@ -11,7 +11,7 @@ const cliProgress = require('cli-progress');
 const _oraLib = require('ora');
 const Ora = _oraLib.default || _oraLib;
 
-const ws = "[METACHAT]";
+const ws = "[FLOPPA-FCA]";
 
 let h;
 const i = {};
