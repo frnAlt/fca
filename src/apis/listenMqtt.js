@@ -931,8 +931,8 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                 // Both recovery paths exhausted — emit auth error to signal the user
                 return emitAuthError("not_logged_in", msg);
             }
-            if (/blocked.*login|checkpoint|session.*expired|invalid.*session|login.*block|account.*lock|verification.*required|authentication.*required/i.test(msg)) {
-                utils.error("MQTT", "Auth error in getSeqID: Session/Login blocked");
+            if (/blocked.*login|checkpoint|session.*expired|invalid.*session|login.*block|account.*lock|verification.*required|authentication.*required|Account security issue|security.*issue|1357004|1357001|1357031|1357033|2056003|checkpoint_required/i.test(msg)) {
+                utils.error("MQTT", "Auth error in getSeqID: Session/Login blocked or checkpoint required");
                 
                 // Still try token refresh for session expiry before giving up
                 try {
@@ -947,7 +947,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                     }
                 } catch (_) {}
                 
-                return emitAuthError("login_blocked", msg);
+                return emitAuthError(/checkpoint|security.*issue|1357004/i.test(msg) ? "checkpoint" : "login_blocked", msg);
             }
             
             utils.error("MQTT", "getSeqID error:", msg);

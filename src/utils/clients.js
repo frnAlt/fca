@@ -223,11 +223,12 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
 
     if (res.error && ACCOUNT_ERROR_CODES[res.error]) {
       const err = new Error(ACCOUNT_ERROR_CODES[res.error]);
-      err.error = "Account security issue";
+      err.error = res.error === 1357004 ? "checkpoint_required" : "Account security issue";
       err.errorCode = res.error;
       err.errorType = res.error === 1357004 ? "CHECKPOINT" : res.error === 1357031 ? "LOCKED" : "BLOCKED";
       err.requiresReLogin = res.error === 1357004 || res.error === 1357031;
       warn("Account Status", `${ACCOUNT_ERROR_CODES[res.error]} (Code: ${res.error})`);
+      _emit(ctx, "checkpoint", { type: "account_security", code: res.error, message: ACCOUNT_ERROR_CODES[res.error], res });
       throw err;
     }
 
