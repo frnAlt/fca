@@ -4,6 +4,22 @@ const utils = require('../utils');
 
 module.exports = function (defaultFuncs, api, ctx) {
   return function sendTypingIndicator(sendTyping, threadID, callback) {
+    // Parameter normalization for overloaded call styles
+    if (typeof sendTyping === "string" || typeof sendTyping === "number" || Array.isArray(sendTyping)) {
+      if (typeof threadID === "function") {
+        callback = threadID;
+        threadID = sendTyping;
+        sendTyping = true;
+      } else if (typeof threadID === "boolean") {
+        const tmp = sendTyping;
+        sendTyping = threadID;
+        threadID = tmp;
+      } else if (!threadID) {
+        threadID = sendTyping;
+        sendTyping = true;
+      }
+    }
+
     let resolveFunc, rejectFunc;
     const returnPromise = new Promise((resolve, reject) => {
       resolveFunc = resolve;
