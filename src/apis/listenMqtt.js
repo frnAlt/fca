@@ -1286,12 +1286,6 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             listenMqtt(defaultFuncs, api, ctx, dispatchCallback, scheduleReconnect, emitAuthError);
         }
 
-        if (ctx.firstListen) {
-            api.markAsReadAll().catch(err => {
-                utils.error("Failed to mark all messages as read on startup:", err);
-            });
-        }
-
         ctx.firstListen = false;
 
         api.stopListening = msgEmitter.stopListening.bind(msgEmitter);

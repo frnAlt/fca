@@ -11,30 +11,10 @@ const utils = require('../utils');
  */
 module.exports = function (defaultFuncs, api, ctx) {
   /**
+   * Safe no-op / fallback markAsReadAll to avoid triggering Facebook bot block (error 1357001)
    * @returns {Promise<void>}
    */
   return async function markAsReadAll() {
-    const form = {
-      folder: "inbox",
-    };
-
-    try {
-      const parsedData = await defaultFuncs
-        .post(
-          "https://www.facebook.com/ajax/mercury/mark_folder_as_read.php",
-          ctx.jar,
-          form
-        )
-        .then(utils.parseAndCheckLogin(ctx, defaultFuncs));
-
-      if (parsedData.error) {
-        throw parsedData;
-      }
-      
-      return; 
-    } catch (err) {
-      utils.error("markAsReadAll", err);
-      throw err;
-    }
+    return Promise.resolve();
   };
 };
