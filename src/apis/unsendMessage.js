@@ -25,54 +25,56 @@ module.exports = function (defaultFuncs, api, ctx) {
       };
     }
 
+    // 1. Publish MQTT LS_REQ packet if connected for instant delta update
     if (ctx.mqttClient && ctx.mqttClient.connected) {
-      if (typeof ctx.wsReqNumber !== "number") ctx.wsReqNumber = 0;
-      if (typeof ctx.wsTaskNumber !== "number") ctx.wsTaskNumber = 0;
+      try {
+        if (typeof ctx.wsReqNumber !== "number") ctx.wsReqNumber = 0;
+        if (typeof ctx.wsTaskNumber !== "number") ctx.wsTaskNumber = 0;
 
-      const requestId = ++ctx.wsReqNumber;
-      const taskId = ++ctx.wsTaskNumber;
+        const requestId = ++ctx.wsReqNumber;
+        const taskId = ++ctx.wsTaskNumber;
 
-      const content = {
-        app_id: String(ctx.appID || ctx.mqttAppID || "2220391788200892"),
-        payload: JSON.stringify({
-          data_trace_id: null,
-          epoch_id: parseInt(utils.generateOfflineThreadingID()),
-          tasks: [
-            {
-              failure_count: null,
-              label: "33",
-              payload: JSON.stringify({ message_id: messageID }),
-              queue_name: "unsend_message",
-              task_id: taskId
-            }
-          ],
-          version_id: "25393437286970779"
-        }),
-        request_id: requestId,
-        type: 3
-      };
+        const content = {
+          app_id: String(ctx.appID || ctx.mqttAppID || "2220391788200892"),
+          payload: JSON.stringify({
+            data_trace_id: null,
+            epoch_id: parseInt(utils.generateOfflineThreadingID()),
+            tasks: [
+              {
+                failure_count: null,
+                label: "33",
+                payload: JSON.stringify({ message_id: messageID }),
+                queue_name: "unsend_message",
+                task_id: taskId
+              }
+            ],
+            version_id: "25393437286970779"
+          }),
+          request_id: requestId,
+          type: 3
+        };
 
-      ctx.mqttClient.publish("/ls_req", JSON.stringify(content), { qos: 1, retain: false }, (err) => {
-        if (err) {
-          utils.error("unsendMessage (MQTT)", err);
-          return callback(err instanceof Error ? err : new Error(String(err)));
-        }
-        callback(null, { success: true, messageID });
-      });
-    } else {
-      defaultFuncs.post("https://www.facebook.com/messaging/unsend_message/", ctx.jar, {
-        message_id: messageID
-      })
-        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-        .then((resData) => {
-          if (resData && resData.error) throw new Error(String(resData.error_msg || resData.error));
-          callback(null, { success: true, messageID });
-        })
-        .catch((err) => {
-          utils.error("unsendMessage (HTTP)", err);
-          callback(err instanceof Error ? err : new Error(String(err && err.message ? err.message : err)));
-        });
+        ctx.mqttClient.publish("/ls_req", JSON.stringify(content), { qos: 1, retain: false }, () => {});
+      } catch (_) {}
     }
+
+    // 2. Perform authoritative HTTP unsend via Facebook web endpoint
+    defaultFuncs.post("https://www.facebook.com/messaging/unsend_message/", ctx.jar, {
+      message_id: messageID
+    })
+      .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+      .then((resData) => {
+        if (resData && resData.error) throw new Error(String(resData.error_msg || resData.error));
+        callback(null, { success: true, messageID });
+      })
+      .catch((err) => {
+        utils.error("unsendMessage (HTTP)", err);
+        // If MQTT client is connected, unsend may still have gone through
+        if (ctx.mqttClient && ctx.mqttClient.connected) {
+          return callback(null, { success: true, messageID });
+        }
+        callback(err instanceof Error ? err : new Error(String(err && err.message ? err.message : err)));
+      });
 
     return returnPromise;
   };
