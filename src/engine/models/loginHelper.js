@@ -67,7 +67,7 @@ function resolveAppStateInput(credentials = {}) {
 }
 
 function shouldAutoListen(globalOptions = {}, api, ctx) {
-    return globalOptions.autoListen !== false &&
+    return globalOptions.autoListen === true &&
         globalOptions._skipAutoListen !== true &&
         typeof api?.listenMqtt === 'function' &&
         !(ctx && ctx._listeningActive);

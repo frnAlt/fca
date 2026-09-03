@@ -904,7 +904,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                     utils.warn("MQTT", "GraphQL getSeqID endpoint unavailable — proceeding with direct MQTT realtime connection");
                     ctx.lastSeqId = ctx.lastSeqId || "-1";
                     ctx._cycling = false;
-                    if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                    if (ctx._listeningActive && !ctx._ending) {
                         return listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
                     }
                     return;
@@ -922,14 +922,14 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                 ctx.lastSeqId = syncSeqId;
                 ctx._cycling = false;
                 utils.log("MQTT", "getSeqID ok -> listenMqtt()");
-                if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                if (ctx._listeningActive && !ctx._ending) {
                     listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
                 }
             } else {
                 utils.warn("MQTT", "No sync_sequence_id in GraphQL response — connecting MQTT with initial sequence");
                 ctx.lastSeqId = ctx.lastSeqId || "-1";
                 ctx._cycling = false;
-                if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+                if (ctx._listeningActive && !ctx._ending) {
                     listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
                 }
             }
@@ -937,35 +937,48 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             utils.warn("MQTT", `getSeqID warning: ${err?.message || err?.error || err} — connecting directly to MQTT`);
             ctx.lastSeqId = ctx.lastSeqId || "-1";
             ctx._cycling = false;
-            if (ctx._listeningActive && !ctx._ending && ctx._listenGeneration === expectedGeneration) {
+            if (ctx._listeningActive && !ctx._ending) {
                 listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
             }
         }
     };
 
     function getSeqIDWrapper() {
-        if (ctx._getSeqIDInFlight) return Promise.resolve(false);
-        const expectedGeneration = ctx._listenGeneration;
+        if (ctx._getSeqIDInFlight) {
+            if (ctx._getSeqIDPromise) {
+                return ctx._getSeqIDPromise.then(() => {
+                    if (ctx._listeningActive && !ctx._ending && (!ctx.mqttClient || !ctx.mqttClient.connected)) {
+                        ctx.lastSeqId = ctx.lastSeqId || "-1";
+                        listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+                    }
+                });
+            }
+            return Promise.resolve(false);
+        }
         ctx._getSeqIDInFlight = true;
         utils.log("MQTT", "getSeqID call");
-        return getSeqID(expectedGeneration)
+        ctx._getSeqIDPromise = getSeqID(ctx._listenGeneration)
             .then(() => { 
                 utils.log("MQTT", "getSeqID done");
                 ctx._cycling = false;
+                if (ctx._listeningActive && !ctx._ending && (!ctx.mqttClient || !ctx.mqttClient.connected)) {
+                    listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+                }
                 return true;
             })
             .catch(e => { 
                 utils.error("MQTT", `getSeqID error: ${e && e.message ? e.message : e}`);
-                if (ctx.globalOptions.autoReconnect && ctx._listeningActive && !ctx._ending) {
-                    ctx._reconnectAttempts = (ctx._reconnectAttempts || 0) + 1;
-                    const baseDelay = (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 2000;
-                    scheduleReconnect(computeBackoffDelay(ctx, baseDelay, MQTT_MAX_BACKOFF, MQTT_JITTER_MAX));
+                if (ctx._listeningActive && !ctx._ending && (!ctx.mqttClient || !ctx.mqttClient.connected)) {
+                    ctx.lastSeqId = ctx.lastSeqId || "-1";
+                    listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
                 }
                 return false;
             })
             .finally(() => {
                 ctx._getSeqIDInFlight = false;
+                ctx._getSeqIDPromise = null;
             });
+        return ctx._getSeqIDPromise;
     }
 
     function isConnected() {
@@ -1088,6 +1101,8 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                 // silently create a fresh MQTT socket.
                 ctx._listenGeneration = (ctx._listenGeneration || 0) + 1;
                 ctx._mqttReconnectRequested = false;
+                ctx._getSeqIDInFlight = false;
+                ctx._getSeqIDPromise = null;
 
                 // Comprehensive cleanup of all timers
             if (ctx._autoCycleTimer) {

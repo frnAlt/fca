@@ -19,9 +19,37 @@ const { AntiSuspension } = require('../../utils/antiSuspension');
  */
 async function buildAPI(html, jar, netData, globalOptions, fbLinkFunc, errorRetrievingMsg) {
     let userID;
-    const cookies = jar.getCookiesSync(fbLinkFunc());
-    const primaryProfile = cookies.find((val) => val.cookieString().startsWith("c_user="));
-    const secondaryProfile = cookies.find((val) => val.cookieString().startsWith("i_user="));
+    const url = typeof fbLinkFunc === 'function' ? fbLinkFunc() : "https://www.facebook.com/";
+    let cookies = (jar.getCookiesSync ? jar.getCookiesSync(url) : []) || [];
+    let primaryProfile = cookies.find((val) => val.cookieString().startsWith("c_user="));
+    let secondaryProfile = cookies.find((val) => val.cookieString().startsWith("i_user="));
+
+    if (!primaryProfile && !secondaryProfile && typeof jar.getCookiesSync === 'function') {
+        const altCookies = [
+            ...jar.getCookiesSync("https://www.facebook.com/"),
+            ...jar.getCookiesSync("https://facebook.com/"),
+            ...jar.getCookiesSync("https://m.facebook.com/"),
+            ...jar.getCookiesSync("https://mbasic.facebook.com/")
+        ];
+        primaryProfile = altCookies.find((val) => val.cookieString().startsWith("c_user="));
+        secondaryProfile = altCookies.find((val) => val.cookieString().startsWith("i_user="));
+    }
+
+    if (!primaryProfile && !secondaryProfile && typeof jar.toJSON === 'function') {
+        const allCookies = jar.toJSON().cookies || [];
+        const cUser = allCookies.find(c => c.key === "c_user" || c.name === "c_user");
+        const iUser = allCookies.find(c => c.key === "i_user" || c.name === "i_user");
+        if (cUser) primaryProfile = { cookieString: () => `c_user=${cUser.value}` };
+        if (iUser) secondaryProfile = { cookieString: () => `i_user=${iUser.value}` };
+    }
+
+    if (!primaryProfile && !secondaryProfile && typeof html === 'string') {
+        const matchUser = html.match(/"USER_ID":"(\d+)"/) || html.match(/c_user=(\d+)/) || html.match(/"actorID":"(\d+)"/) || html.match(/ACCOUNT_ID":"(\d+)"/);
+        if (matchUser && matchUser[1]) {
+            primaryProfile = { cookieString: () => `c_user=${matchUser[1]}` };
+        }
+    }
+
     if (!primaryProfile && !secondaryProfile) {
         throw new Error(errorRetrievingMsg);
     }
