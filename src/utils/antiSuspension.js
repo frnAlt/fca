@@ -306,12 +306,8 @@ class AntiSuspension {
     }
 
     async addSmartDelay() {
-        // Short inter-request pause — avoids sub-50ms bot patterns without
-        // adding noticeable latency to normal flows.
-        const base = 80 + Math.random() * 120;
-        const jitter = (Math.random() - 0.5) * 30;
-        const total = Math.max(50, base + jitter);
-        await new Promise(resolve => setTimeout(resolve, total));
+        // Ultra-low latency micro-delay (under 10ms) to ensure instant response times
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 8) + 2));
     }
 
     /**
