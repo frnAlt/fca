@@ -200,6 +200,61 @@ module.exports = function (defaultFuncs, api, ctx) {
       throw new Error("Invalid thread ID(s)");
     }
     
+    function makeFallback(tids) {
+        const threadInfos = {};
+        for (const t of tids) {
+            const cached = ctx.cache && ctx.cache.get(`thread_${t}`);
+            if (cached) {
+                threadInfos[t] = cached;
+            } else {
+                const fb = {
+                    threadID: String(t),
+                    threadName: "Messenger Chat",
+                    participantIDs: [String(t)],
+                    userInfo: [{ id: String(t), name: "User", gender: "UNKNOWN" }],
+                    unreadCount: 0,
+                    messageCount: 0,
+                    timestamp: Date.now(),
+                    muteUntil: null,
+                    isGroup: false,
+                    isSubscribed: true,
+                    isArchived: false,
+                    folder: "INBOX",
+                    cannotReplyReason: null,
+                    eventReminders: [],
+                    emoji: "👍",
+                    color: null,
+                    adminIDs: [],
+                    approvalMode: false,
+                    nicknames: {},
+                    reactionsMuteMode: "reaction_mute_mode_default",
+                    mentionsMuteMode: "mention_mute_mode_default"
+                };
+                if (ctx.cache) ctx.cache.set(`thread_${t}`, fb);
+                threadInfos[t] = fb;
+            }
+        }
+        return Array.isArray(threadID) ? threadInfos : threadInfos[tids[0]];
+    }
+
+    const cachedInfos = {};
+    let allCached = true;
+    for (const t of threadIDs) {
+        const cached = ctx.cache && ctx.cache.get(`thread_${t}`);
+        if (cached) {
+            cachedInfos[t] = cached;
+        } else {
+            allCached = false;
+        }
+    }
+    if (allCached) {
+        return Array.isArray(threadID) ? cachedInfos : cachedInfos[threadIDs[0]];
+    }
+
+    if (ctx._graphqlRestrictedUntil && Date.now() < ctx._graphqlRestrictedUntil) {
+        return makeFallback(threadIDs);
+    }
+
     let form = {};
     threadIDs.forEach((t, i) => {
       form["o" + i] = {
@@ -274,39 +329,12 @@ module.exports = function (defaultFuncs, api, ctx) {
 
         return Array.isArray(threadID) ? threadInfos : Object.values(threadInfos)[0] || null;
     } catch (err) {
-        const threadInfos = {};
-        for (const t of threadIDs) {
-            const cached = ctx.cache && ctx.cache.get(`thread_${t}`);
-            if (cached) {
-                threadInfos[t] = cached;
-            } else {
-                threadInfos[t] = {
-                    threadID: String(t),
-                    threadName: "Messenger Chat",
-                    participantIDs: [String(t)],
-                    userInfo: [{ id: String(t), name: "User", gender: "UNKNOWN" }],
-                    unreadCount: 0,
-                    messageCount: 0,
-                    timestamp: Date.now(),
-                    muteUntil: null,
-                    isGroup: false,
-                    isSubscribed: true,
-                    isArchived: false,
-                    folder: "INBOX",
-                    cannotReplyReason: null,
-                    eventReminders: [],
-                    emoji: "👍",
-                    color: null,
-                    adminIDs: [],
-                    approvalMode: false,
-                    nicknames: {},
-                    reactionsMuteMode: "reaction_mute_mode_default",
-                    mentionsMuteMode: "mention_mute_mode_default"
-                };
-            }
+        ctx._graphqlRestrictedUntil = Date.now() + 5 * 60 * 1000;
+        if (!ctx._warnedGraphqlRestricted) {
+            ctx._warnedGraphqlRestricted = true;
+            utils.warn("getThreadInfo", `GraphQL query restricted (${err?.message || err?.error || err}), using resilient thread cache`);
         }
-        utils.warn("getThreadInfo", `GraphQL query unavailable (${err?.message || err?.error || err}), using resilient thread fallback`);
-        return Array.isArray(threadID) ? threadInfos : threadInfos[threadIDs[0]];
+        return makeFallback(threadIDs);
     }
   };
 };
