@@ -333,10 +333,10 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         const isMultiRecipient = Array.isArray(threadID);
-        const preferMqtt = ctx.globalOptions && ctx.globalOptions.useMqttSend === true;
+        const usedMqtt = mqttReady && !isMultiRecipient && api.sendMessageMqtt;
 
         let result;
-        if (preferMqtt && mqttReady && !isMultiRecipient && api.sendMessageMqtt) {
+        if (usedMqtt) {
           try {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
