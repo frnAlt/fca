@@ -17,6 +17,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           return;
         }
         if (fmtMsg) {
+            utils.log("NewMessage", `Received message [${fmtMsg.threadID}] ${fmtMsg.senderID} -> "${fmtMsg.body || '[Attachment]'}"`);
             if (ctx.globalOptions.autoMarkDelivery) {
                 api.markAsDelivered(fmtMsg.threadID, fmtMsg.messageID);
             }

@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const { parseDelta } = require('./mqttDeltaValue');
 
 const topics = [
-    "/ls_req", "/ls_resp", "/legacy_web", "/webrtc", "/rtc_multi", "/onevc", "/br_sr", "/sr_res",
+    "/legacy_web", "/webrtc", "/rtc_multi", "/onevc", "/br_sr", "/sr_res",
     "/t_ms", "/thread_typing", "/orca_typing_notifications", "/notify_disconnect",
     "/orca_presence", "/inbox", "/mercury", "/messaging_events",
     "/orca_message_notifications", "/pp", "/webrtc_response"
@@ -124,7 +124,7 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         fg: false,
         d: cid,
         ct: 'websocket',
-        aid: 219994525426954,
+        aid: '219994525426954',
         aids: null,
         mqtt_sid: '',
         cp: 3,
@@ -389,13 +389,11 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
             }
 
             const queue = { 
-                sync_api_version: 11, 
-                max_deltas_able_to_process: 200, 
-                delta_batch_size: 200, 
+                sync_api_version: 10, 
+                max_deltas_able_to_process: 1000, 
+                delta_batch_size: 500, 
                 encoding: "JSON", 
-                entity_fbid: ctx.userID,
-                initial_titan_sequence_id: ctx.lastSeqId,
-                device_params: null
+                entity_fbid: ctx.userID
             };
 
             let topic;
@@ -405,6 +403,8 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
                 queue.sync_token = ctx.syncToken;
             } else {
                 topic = "/messenger_sync_create_queue";
+                queue.initial_titan_sequence_id = ctx.lastSeqId;
+                queue.device_params = null;
             }
 
             mqttClient.publish(topic, JSON.stringify(queue), { qos: 1, retain: false }, (pubErr) => {
@@ -451,14 +451,21 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
             let jsonMessage = Buffer.isBuffer(message) ? Buffer.from(message).toString() : message;
             try { jsonMessage = JSON.parse(jsonMessage); } catch (_) { jsonMessage = {}; }
 
+            const callbackToUse = (err, data) => {
+                if (typeof ctx._listenCallback === 'function') {
+                    return ctx._listenCallback(err, data);
+                }
+                return globalCallback(err, data);
+            };
+
             if (jsonMessage.type === "jewel_requests_add") {
-                globalCallback(null, { 
+                callbackToUse(null, { 
                     type: "friend_request_received", 
                     actorFbId: jsonMessage.from.toString(), 
                     timestamp: Date.now().toString() 
                 });
             } else if (jsonMessage.type === "jewel_requests_remove_old") {
-                globalCallback(null, { 
+                callbackToUse(null, { 
                     type: "friend_request_cancel", 
                     actorFbId: jsonMessage.from.toString(), 
                     timestamp: Date.now().toString() 
@@ -476,7 +483,7 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
 
                 if (jsonMessage.deltas) {
                     for (const delta of jsonMessage.deltas) {
-                        parseDelta(defaultFuncs, api, ctx, globalCallback, { delta });
+                        parseDelta(defaultFuncs, api, ctx, callbackToUse, { delta });
                     }
                 }
             } else if (topic === "/thread_typing" || topic === "/orca_typing_notifications") {
@@ -487,12 +494,12 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
                         from: jsonMessage.sender_fbid.toString(),
                         threadID: utils.formatID((jsonMessage.thread || jsonMessage.sender_fbid).toString())
                     };
-                    globalCallback(null, typ);
+                    callbackToUse(null, typ);
                 }
             } else if (topic === "/orca_presence") {
                 if (ctx.globalOptions.updatePresence && jsonMessage.list) {
                     for (const data of jsonMessage.list) {
-                        globalCallback(null, { 
+                        callbackToUse(null, { 
                             type: "presence", 
                             userID: String(data.u), 
                             timestamp: data.l * 1000, 
