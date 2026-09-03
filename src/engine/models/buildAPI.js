@@ -75,15 +75,33 @@ async function buildAPI(html, jar, netData, globalOptions, fbLinkFunc, errorRetr
         return null;
     };
 
-    const dtsgData = findConfig("DTSGInitialData");
-    const dtsg = dtsgData ? dtsgData.token : utils.getFrom(html, '"token":"', '"');
+    const dtsgData = findConfig("DTSGInitialData") || findConfig("DTSGInitData");
+    let dtsg = dtsgData?.token;
+    if (!dtsg && typeof html === "string") {
+        dtsg = utils.getFrom(html, '"DTSGInitialData",[],{"token":"', '"')
+            || utils.getFrom(html, '"token":"', '"')
+            || (html.match(/name="fb_dtsg"\s+value="([^"]+)"/)?.[1])
+            || (html.match(/"fb_dtsg"\s*:\s*"([^"]+)"/)?.[1])
+            || "";
+    }
+    dtsg = dtsg || "";
     
     const lsdData = findConfig("LSD");
-    const lsd = lsdData ? lsdData.token : utils.getFrom(html, '"LSD",[],{"token":"', '"');
+    let lsd = lsdData?.token;
+    if (!lsd && typeof html === "string") {
+        lsd = utils.getFrom(html, '"LSD",[],{"token":"', '"')
+            || (html.match(/name="lsd"\s+value="([^"]+)"/)?.[1])
+            || "";
+    }
+    lsd = lsd || "";
     
+    const jazoest = dtsg
+        ? `2${Array.from(dtsg).reduce((a, b) => a + b.charCodeAt(0), 0)}`
+        : "2";
+
     const dtsgResult = { 
         fb_dtsg: dtsg, 
-        jazoest: `2${Array.from(dtsg).reduce((a, b) => a + b.charCodeAt(0), 0)}`,
+        jazoest: jazoest,
         lsd: lsd
     };
 
@@ -101,8 +119,12 @@ async function buildAPI(html, jar, netData, globalOptions, fbLinkFunc, errorRetr
     let mqttEndpoint = mqttConfigData ? mqttConfigData.endpoint : undefined;
 
     let region = mqttEndpoint ? new URL(mqttEndpoint).searchParams.get("region")?.toUpperCase() : undefined;
-    const irisSeqIDMatch = html.match(/irisSeqID:"(.+?)"/);
-    const irisSeqID = irisSeqIDMatch ? irisSeqIDMatch[1] : null;
+    const irisSeqIDMatch = html.match(/irisSeqID:"(.+?)"/)
+        || html.match(/"irisSeqID"\s*:\s*"([^"]+)"/)
+        || html.match(/"sync_sequence_id"\s*:\s*"([^"]+)"/)
+        || html.match(/"sequence_id"\s*:\s*"([^"]+)"/)
+        || html.match(/\["irisSeqID",\s*\[\],\s*\{"seqID"\s*:\s*"([^"]+)"\}/);
+    const irisSeqID = irisSeqIDMatch ? (irisSeqIDMatch[1] || irisSeqIDMatch[2]) : null;
 
     // Extract Facebook client-state tokens that are embedded in every page load.
     // Real browsers include these in every subsequent request to prove the request

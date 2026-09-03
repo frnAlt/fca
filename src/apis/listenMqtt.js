@@ -875,6 +875,10 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
     installPostGuard();
 
     const getSeqID = async (expectedGeneration = ctx._listenGeneration) => {
+        if (ctx.lastSeqId && ctx.lastSeqId !== "-1") {
+            utils.log("MQTT", `Using existing sequence ID: ${ctx.lastSeqId}`);
+            return;
+        }
         try {
             const form = {
                 av: ctx.globalOptions.pageID,

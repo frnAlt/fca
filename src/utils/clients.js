@@ -227,7 +227,8 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
       err.errorCode = res.error;
       err.errorType = res.error === 1357004 ? "CHECKPOINT" : res.error === 1357031 ? "LOCKED" : "BLOCKED";
       err.requiresReLogin = res.error === 1357031;
-      if (!ctx || !ctx.loggedIn) {
+      if ((!ctx || !ctx.loggedIn) && !ctx?._checkpointWarned) {
+        if (ctx) ctx._checkpointWarned = true;
         warn("Account Status", `${ACCOUNT_ERROR_CODES[res.error]} (Code: ${res.error})`);
         _emit(ctx, "checkpoint", { type: "account_security", code: res.error, message: ACCOUNT_ERROR_CODES[res.error], res });
       }
