@@ -23,42 +23,140 @@ function getAdminTextMessageType(type) {
 function formatDeltaMessage(m) {
     if (!m || !m.delta) return null;
     const md = m.delta.messageMetadata || {};
-    let mdata = [];
-    try {
-        mdata = m.delta.data?.prng ? JSON.parse(m.delta.data.prng) : [];
-    } catch (_) {
-        mdata = [];
-    }
     const body = m.delta.body != null ? String(m.delta.body) : "";
-    const mentions = {};
-    if (Array.isArray(mdata)) {
-        for (const mention of mdata) {
-            if (mention && mention.i) {
-                const start = Number(mention.o) || 0;
-                const len = Number(mention.l) || 0;
-                mentions[mention.i] = body.substring(start, start + len);
+    let mdata = [];
+
+    // Method 1: messageMetadata.data.data (asMap format - 2025/2026 FB format)
+    if (md?.data?.data) {
+        try {
+            const dataData = md.data.data;
+            for (const key of Object.keys(dataData)) {
+                const entry = dataData[key];
+                if (entry?.asMap?.data) {
+                    const mapData = entry.asMap.data;
+                    for (const idx of Object.keys(mapData)) {
+                        const mentionEntry = mapData[idx];
+                        if (mentionEntry?.asMap?.data) {
+                            const mentionData = mentionEntry.asMap.data;
+                            const id = mentionData.id?.asLong || mentionData.id?.asString;
+                            const offset = parseInt(mentionData.offset?.asLong || mentionData.offset?.asString || '0', 10);
+                            const length = parseInt(mentionData.length?.asLong || mentionData.length?.asString || '0', 10);
+                            if (id) mdata.push({ i: id.toString(), o: offset, l: length });
+                        }
+                    }
+                }
             }
+        } catch (_) {}
+    }
+
+    // Method 2: data.prng (stringified JSON array)
+    if (mdata.length === 0 && m.delta.data?.prng) {
+        try {
+            const parsed = JSON.parse(m.delta.data.prng);
+            if (Array.isArray(parsed)) {
+                mdata = parsed.map(item => ({
+                    i: (item.i || item.id || item.user_id)?.toString(),
+                    o: item.o ?? item.offset ?? 0,
+                    l: item.l ?? item.length ?? 0
+                }));
+            }
+        } catch (_) {}
+    }
+
+    // Method 3: data.mentions
+    if (mdata.length === 0 && m.delta.data?.mentions) {
+        try {
+            const parsed = JSON.parse(m.delta.data.mentions);
+            if (Array.isArray(parsed)) {
+                mdata = parsed.map(mention => ({
+                    i: (mention.i || mention.id || mention.user_id)?.toString(),
+                    o: mention.o ?? mention.offset ?? 0,
+                    l: mention.l ?? mention.length ?? 0
+                }));
+            }
+        } catch (_) {}
+    }
+
+    // Method 4: messageMetadata.ranges (GraphQL format)
+    if (mdata.length === 0 && md?.ranges && Array.isArray(md.ranges)) {
+        try {
+            mdata = md.ranges.map(r => ({
+                i: (r.entity?.id || r.mentionID || r.id || r.mention_id)?.toString(),
+                o: r.offset ?? 0,
+                l: r.length ?? 0
+            }));
+        } catch (_) {}
+    }
+
+    // Method 5: delta.mentions directly
+    if (mdata.length === 0 && m.delta.mentions) {
+        try {
+            if (Array.isArray(m.delta.mentions)) {
+                mdata = m.delta.mentions.map(mention => ({
+                    i: (mention.id || mention.i || mention.user_id || mention.userId)?.toString(),
+                    o: mention.offset ?? mention.o ?? 0,
+                    l: mention.length ?? mention.l ?? 0
+                }));
+            } else if (typeof m.delta.mentions === 'object') {
+                mdata = Object.entries(m.delta.mentions).map(([id, tag]) => {
+                    const offset = body.indexOf(tag);
+                    return { i: id.toString(), o: offset >= 0 ? offset : 0, l: (tag || "").length };
+                });
+            }
+        } catch (_) {}
+    }
+
+    // Method 6: platform_xmd / profile_xmd / at
+    if (mdata.length === 0 && (m.delta.data?.platform_xmd || m.delta.data?.profile_xmd || m.delta.data?.at)) {
+        try {
+            const raw = m.delta.data.platform_xmd || m.delta.data.profile_xmd || m.delta.data.at;
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            const list = Array.isArray(parsed) ? parsed : (parsed?.mentions || []);
+            mdata = list.map(item => ({
+                i: (item.id || item.i || item.uid || item.user_id)?.toString(),
+                o: item.offset ?? item.o ?? 0,
+                l: item.length ?? item.l ?? 0
+            }));
+        } catch (_) {}
+    }
+
+    const mentions = {};
+    for (const mention of mdata) {
+        if (mention && mention.i) {
+            const start = Number(mention.o) || 0;
+            const len = Number(mention.l) || 0;
+            mentions[mention.i] = len > 0 ? body.substring(start, start + len) : "@User";
         }
     }
 
-    const messageReply = m.delta.messageReply ? {
-        messageID: m.delta.messageReply.messageID,
-        senderID: formatID(m.delta.messageReply.senderID),
-        body: m.delta.messageReply.body,
-        attachments: m.delta.messageReply.attachments,
-        timestamp: m.delta.messageReply.timestamp,
-        isReply: true
-    } : null;
+    // Parse messageReply with comprehensive fallback keys
+    const rawReply = m.delta.messageReply || m.delta.repliedToMessage;
+    let messageReply = null;
+    if (rawReply) {
+        const replySender = rawReply.senderID 
+            || rawReply.messageMetadata?.actorFbId 
+            || rawReply.actorFbId 
+            || rawReply.sender_fbid;
+        const replyMid = rawReply.messageID 
+            || rawReply.messageMetadata?.messageId 
+            || rawReply.mid;
+        messageReply = {
+            messageID: replyMid ? String(replyMid) : null,
+            senderID: replySender != null ? formatID(replySender.toString()) : null,
+            body: rawReply.body || rawReply.text || "",
+            attachments: (rawReply.attachments || []).map(v => _formatAttachment(v)),
+            timestamp: rawReply.timestamp || rawReply.messageMetadata?.timestamp,
+            isReply: true
+        };
+    }
 
-    // Guard: actorFbId can be null on system/admin messages; threadKey can be
-    // missing on malformed deltas from Facebook — both crash with .toString().
     const senderID = md.actorFbId != null ? formatID(md.actorFbId.toString()) : "0";
     const threadKey = md.threadKey || {};
     const threadRaw = threadKey.threadFbId || threadKey.otherUserFbId;
     const threadID = threadRaw != null ? formatID(threadRaw.toString()) : "0";
 
     return {
-        type: "message",
+        type: messageReply ? "message_reply" : "message",
         senderID,
         body: m.delta.body || "",
         threadID,

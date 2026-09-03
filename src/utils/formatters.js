@@ -752,17 +752,28 @@ function formatDeltaMessage(m) {
         }
     }
     
-    const messageReply = m.delta.messageReply ? {
-        messageID: m.delta.messageReply.messageID,
-        senderID: formatID(m.delta.messageReply.senderID),
-        body: m.delta.messageReply.body,
-        attachments: m.delta.messageReply.attachments,
-        timestamp: m.delta.messageReply.timestamp,
-        isReply: true
-    } : null;
+    const rawReply = m.delta.messageReply || m.delta.repliedToMessage;
+    let messageReply = null;
+    if (rawReply) {
+        const replySender = rawReply.senderID 
+            || rawReply.messageMetadata?.actorFbId 
+            || rawReply.actorFbId 
+            || rawReply.sender_fbid;
+        const replyMid = rawReply.messageID 
+            || rawReply.messageMetadata?.messageId 
+            || rawReply.mid;
+        messageReply = {
+            messageID: replyMid ? String(replyMid) : null,
+            senderID: replySender != null ? formatID(replySender.toString()) : null,
+            body: rawReply.body || rawReply.text || "",
+            attachments: (rawReply.attachments || []).map(v => _formatAttachment(v)),
+            timestamp: rawReply.timestamp || rawReply.messageMetadata?.timestamp,
+            isReply: true
+        };
+    }
 
     return {
-        type: "message",
+        type: messageReply ? "message_reply" : "message",
         senderID: formatID(md.actorFbId.toString()),
         body: body,
         threadID: formatID(
