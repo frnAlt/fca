@@ -370,6 +370,16 @@ module.exports = (defaultFuncs, api, ctx) => {
             }
           }
         }
+        if (result && result.messageID) {
+          if (!global.botSentMessages) global.botSentMessages = new Map();
+          const tids = Array.isArray(threadID) ? threadID : [threadID];
+          for (const tid of tids) {
+            const list = global.botSentMessages.get(String(tid)) || [];
+            list.push(result.messageID);
+            if (list.length > 80) list.shift();
+            global.botSentMessages.set(String(tid), list);
+          }
+        }
         callback(null, result);
       } catch (sendErr) {
         callback(sendErr);

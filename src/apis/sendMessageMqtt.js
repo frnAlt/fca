@@ -238,6 +238,13 @@ module.exports = (defaultFuncs, api, ctx) => {
             messageID: String(reqID || Date.now()),
             threadID: String(content?.payload?.tasks?.[0]?.queue_name || "")
           };
+          if (fastRes.messageID && fastRes.threadID) {
+            if (!global.botSentMessages) global.botSentMessages = new Map();
+            const list = global.botSentMessages.get(fastRes.threadID) || [];
+            list.push(fastRes.messageID);
+            if (list.length > 80) list.shift();
+            global.botSentMessages.set(fastRes.threadID, list);
+          }
           if (callback) callback(null, fastRes);
           return resolve(fastRes);
         }
