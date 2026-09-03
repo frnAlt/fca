@@ -169,24 +169,23 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         } catch (_) {}
     }
     const cookies = Array.from(cookieMap.values()).join('; ');
+    const targetRegion = (region || ctx.region || "prn").toLowerCase();
     let host;
     if (ctx.mqttEndpoint) {
-        // Facebook can return either a URL with an existing query string or a
-        // bare endpoint. Build this through URL so reconnects never produce a
-        // malformed "...chat&sid=..." URL.
         try {
             const endpoint = new URL(ctx.mqttEndpoint);
+            if (!endpoint.searchParams.has("region")) {
+                endpoint.searchParams.set("region", targetRegion);
+            }
             endpoint.searchParams.set("sid", String(sessionID));
             endpoint.searchParams.set("cid", String(cid));
             host = endpoint.toString();
         } catch (_) {
             const separator = ctx.mqttEndpoint.includes("?") ? "&" : "?";
-            host = `${ctx.mqttEndpoint}${separator}sid=${sessionID}&cid=${cid}`;
+            host = `${ctx.mqttEndpoint}${separator}region=${targetRegion}&sid=${sessionID}&cid=${cid}`;
         }
-    } else if (region) {
-        host = `wss://edge-chat.facebook.com/chat?region=${region.toLowerCase()}&sid=${sessionID}&cid=${cid}`;
     } else {
-        host = `wss://edge-chat.facebook.com/chat?sid=${sessionID}&cid=${cid}`;
+        host = `wss://edge-chat.facebook.com/chat?region=${targetRegion}&sid=${sessionID}&cid=${cid}`;
     }
 
     utils.log("Connecting to MQTT...", host);
