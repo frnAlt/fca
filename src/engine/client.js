@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS = {
     autoMarkDelivery: false,
     autoMarkRead: false,
     autoReconnect: true,
-    autoListen: true,
+    autoListen: false,
     // Cookie-only sessions must stop when Facebook invalidates the session.
     // Automatic re-login can create repeated authentication attempts during
     // an account review and is therefore opt-in.

@@ -67,10 +67,7 @@ function resolveAppStateInput(credentials = {}) {
 }
 
 function shouldAutoListen(globalOptions = {}, api, ctx) {
-    return globalOptions.autoListen === true &&
-        globalOptions._skipAutoListen !== true &&
-        typeof api?.listenMqtt === 'function' &&
-        !(ctx && ctx._listeningActive);
+    return false;
 }
 
 loginHelper.readAppStateFile = readAppStateFile;

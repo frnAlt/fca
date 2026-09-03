@@ -21,11 +21,24 @@ function getAdminTextMessageType(type) {
 }
 
 function formatDeltaMessage(m) {
-    const md = m.delta.messageMetadata;
-    const mdata = m.delta.data?.prng ? JSON.parse(m.delta.data.prng) : [];
+    if (!m || !m.delta) return null;
+    const md = m.delta.messageMetadata || {};
+    let mdata = [];
+    try {
+        mdata = m.delta.data?.prng ? JSON.parse(m.delta.data.prng) : [];
+    } catch (_) {
+        mdata = [];
+    }
+    const body = m.delta.body != null ? String(m.delta.body) : "";
     const mentions = {};
-    for (const mention of mdata) {
-        mentions[mention.i] = m.delta.body.substring(mention.o, mention.o + mention.l);
+    if (Array.isArray(mdata)) {
+        for (const mention of mdata) {
+            if (mention && mention.i) {
+                const start = Number(mention.o) || 0;
+                const len = Number(mention.l) || 0;
+                mentions[mention.i] = body.substring(start, start + len);
+            }
+        }
     }
 
     const messageReply = m.delta.messageReply ? {

@@ -715,6 +715,14 @@ function createMiddlewareSystem() {
 module.exports = (defaultFuncs, api, ctx, opts) => {
     const identity = () => {};
     let globalCallback = identity;
+    const dispatchCallback = (err, data) => {
+        if (typeof ctx._listenCallback === 'function') {
+            return ctx._listenCallback(err, data);
+        }
+        if (typeof globalCallback === 'function') {
+            return globalCallback(err, data);
+        }
+    };
     if (!ctx._middleware) ctx._middleware = createMiddlewareSystem();
 
     function emitAuthError(reason, detail) {
@@ -931,7 +939,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             .then(() => { 
                 ctx._cycling = false;
                 if (ctx._listeningActive && !ctx._ending && (!ctx.mqttClient || !ctx.mqttClient.connected)) {
-                    listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+                    listenMqtt(defaultFuncs, api, ctx, dispatchCallback, scheduleReconnect, emitAuthError);
                 }
                 return true;
             })
@@ -1161,6 +1169,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
         globalCallback = ctx._middleware && ctx._middleware.count
             ? ctx._middleware.wrapCallback(baseCallback)
             : baseCallback;
+        ctx._listenCallback = globalCallback;
 
         // Replace ctx._emitter with the new MessageEmitter, but first migrate
         // any existing listeners so they are not silently orphaned.
@@ -1234,7 +1243,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             getSeqIDWrapper();
         } else {
             utils.log("MQTT", "Starting listenMqtt");
-            listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconnect, emitAuthError);
+            listenMqtt(defaultFuncs, api, ctx, dispatchCallback, scheduleReconnect, emitAuthError);
         }
 
         if (ctx.firstListen) {

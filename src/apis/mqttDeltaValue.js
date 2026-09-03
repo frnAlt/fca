@@ -13,6 +13,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
         try {
           fmtMsg = utils.formatDeltaMessage(v);
         } catch (err) {
+          utils.warn("parseDelta:formatDeltaMessage", err?.message || err);
           return;
         }
         if (fmtMsg) {
