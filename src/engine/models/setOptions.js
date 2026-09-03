@@ -95,7 +95,7 @@ async function setOptions(globalOptions, options = {}) {
                 globalOptions.updatePresence = false;
                 globalOptions.online = false;
                 globalOptions.simulateTyping = false;
-                utils.configureRateLimiter({ maxConcurrentRequests: 2, maxRequestsPerMinute: 60 });
+                utils.configureRateLimiter({ maxConcurrentRequests: 10, maxRequestsPerMinute: 150 });
             }
         }
     };

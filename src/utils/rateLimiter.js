@@ -14,8 +14,8 @@ class RateLimiter {
 
         this.ERROR_CACHE_TTL = 300000;
         this.COOLDOWN_DURATION = 60000;
-        this.MAX_REQUESTS_PER_MINUTE = 50;
-        this.MAX_CONCURRENT_REQUESTS = 5;
+        this.MAX_REQUESTS_PER_MINUTE = 150;
+        this.MAX_CONCURRENT_REQUESTS = 10;
 
         this.activeRequests = 0;
 
@@ -25,14 +25,14 @@ class RateLimiter {
 
         // Per-endpoint sliding windows
         this._endpointWindows = new Map();
-        this._MAX_PER_ENDPOINT_PER_MINUTE = 20;
+        this._MAX_PER_ENDPOINT_PER_MINUTE = 60;
     }
 
     configure(opts = {}) {
-        if (typeof opts.maxConcurrentRequests === 'number' && opts.maxConcurrentRequests > 0 && opts.maxConcurrentRequests <= 20) {
+        if (typeof opts.maxConcurrentRequests === 'number' && opts.maxConcurrentRequests > 0 && opts.maxConcurrentRequests <= 30) {
             this.MAX_CONCURRENT_REQUESTS = Math.floor(opts.maxConcurrentRequests);
         }
-        if (typeof opts.maxRequestsPerMinute === 'number' && opts.maxRequestsPerMinute > 0 && opts.maxRequestsPerMinute <= 1000) {
+        if (typeof opts.maxRequestsPerMinute === 'number' && opts.maxRequestsPerMinute > 0 && opts.maxRequestsPerMinute <= 2000) {
             this.MAX_REQUESTS_PER_MINUTE = Math.floor(opts.maxRequestsPerMinute);
         }
         if (typeof opts.requestCooldownMs === 'number' && opts.requestCooldownMs >= 0 && opts.requestCooldownMs <= 10 * 60 * 1000) {
@@ -135,7 +135,7 @@ class RateLimiter {
     // ─── Adaptive delay ───────────────────────────────────────────────────────
 
     getAdaptiveDelay(retryCount, errorCode = null) {
-        const baseDelays = [2000, 5000, 10000, 20000];
+        const baseDelays = [1000, 3000, 6000, 12000];
         const base = baseDelays[Math.min(retryCount, baseDelays.length - 1)];
 
         if (errorCode === 1545012 || errorCode === 1675004) {
@@ -147,19 +147,20 @@ class RateLimiter {
         return base;
     }
 
-    async addHumanizedDelay(min = 50, max = 150) {
+    async addHumanizedDelay(min = 0, max = 5) {
         const delay = Math.floor(Math.random() * (max - min + 1)) + min;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
     }
 
     /**
      * Check global and concurrent rate limits.
      * Will wait until below limit, then record the request.
+     * Returns a release function to be called when the request completes.
      */
-    async checkRateLimit(skipHumanDelay = false, endpoint = null) {
-        // Wait for concurrent slot
+    async checkRateLimit(skipHumanDelay = true, endpoint = null) {
+        // Wait for concurrent slot with low-latency polling (10ms)
         while (this.activeRequests >= this.MAX_CONCURRENT_REQUESTS) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
 
         // Wait for per-minute global window to clear
@@ -168,7 +169,7 @@ class RateLimiter {
             if (waitCycles++ > 60) {
                 throw new Error("Rate limit timeout: global request window still full after 60s. Request aborted.");
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         // Wait for per-endpoint window to clear
@@ -178,7 +179,7 @@ class RateLimiter {
                 if (epCycles++ > 30) {
                     throw new Error(`Rate limit timeout: endpoint "${endpoint}" still rate-limited after 30s. Request aborted.`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
 
@@ -189,9 +190,17 @@ class RateLimiter {
         this.activeRequests++;
         this._recordRequest(endpoint);
 
-        setTimeout(() => {
-            this.activeRequests = Math.max(0, this.activeRequests - 1);
-        }, 1000);
+        let released = false;
+        const release = () => {
+            if (!released) {
+                released = true;
+                this.activeRequests = Math.max(0, this.activeRequests - 1);
+            }
+        };
+
+        // Safety fallback: auto-release after 4 seconds if caller forgets
+        setTimeout(release, 4000);
+        return release;
     }
 
     // ─── Cleanup ──────────────────────────────────────────────────────────────

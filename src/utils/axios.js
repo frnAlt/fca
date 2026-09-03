@@ -200,86 +200,86 @@ async function inspectResponseForSessionIssues(adapted, ctx) {
 }
 
 async function requestWithRetry(requestFunction, retries = 5, endpoint = '', threadID = '', ctx = null) {
-    await globalRateLimiter.checkRateLimit();
+    const release = await globalRateLimiter.checkRateLimit(true, endpoint);
+    try {
+        if (globalRateLimiter.isEndpointOnCooldown("__GLOBAL__")) {
+            const cooldown = globalRateLimiter.getEndpointCooldownRemaining("__GLOBAL__");
+            console.warn(`Global cooldown active. Waiting ${cooldown}ms...`);
+            await delay(cooldown);
+        }
 
-    if (globalRateLimiter.isEndpointOnCooldown("__GLOBAL__")) {
-        const cooldown = globalRateLimiter.getEndpointCooldownRemaining("__GLOBAL__");
-        console.warn(`Global cooldown active. Waiting ${cooldown}ms...`);
-        await delay(cooldown);
-    }
+        if (endpoint && globalRateLimiter.isEndpointOnCooldown(endpoint)) {
+            const cooldown = globalRateLimiter.getEndpointCooldownRemaining(endpoint);
+            console.warn(`Endpoint ${endpoint} on cooldown. Waiting ${cooldown}ms...`);
+            await delay(cooldown);
+        }
 
-    if (endpoint && globalRateLimiter.isEndpointOnCooldown(endpoint)) {
-        const cooldown = globalRateLimiter.getEndpointCooldownRemaining(endpoint);
-        console.warn(`Endpoint ${endpoint} on cooldown. Waiting ${cooldown}ms...`);
-        await delay(cooldown);
-    }
+        if (threadID && globalRateLimiter.isThreadOnCooldown(threadID)) {
+            const cooldown = globalRateLimiter.getCooldownRemaining(threadID);
+            console.warn(`Thread ${threadID} on cooldown. Waiting ${cooldown}ms...`);
+            await delay(cooldown);
+        }
 
-    if (threadID && globalRateLimiter.isThreadOnCooldown(threadID)) {
-        const cooldown = globalRateLimiter.getCooldownRemaining(threadID);
-        console.warn(`Thread ${threadID} on cooldown. Waiting ${cooldown}ms...`);
-        await delay(cooldown);
-    }
+        const checkAndApplyRateLimitCooldowns = (responseBody) => {
+            const ERROR_COOLDOWNS = {
+                1545012: 60000,
+                1675004: 30000,
+                368: 120000,
+                404: 5000,
+                500: 10000,
+                503: 30000
+            };
 
-    const checkAndApplyRateLimitCooldowns = (responseBody) => {
-        const ERROR_COOLDOWNS = {
-            1545012: 60000,
-            1675004: 30000,
-            368: 120000,
-            404: 5000,
-            500: 10000,
-            503: 30000
-        };
-
-        const applyCooldown = (errorCode) => {
-            if (errorCode && ERROR_COOLDOWNS[errorCode]) {
-                if (threadID) {
-                    globalRateLimiter.setThreadCooldown(threadID, ERROR_COOLDOWNS[errorCode]);
+            const applyCooldown = (errorCode) => {
+                if (errorCode && ERROR_COOLDOWNS[errorCode]) {
+                    if (threadID) {
+                        globalRateLimiter.setThreadCooldown(threadID, ERROR_COOLDOWNS[errorCode]);
+                    }
+                    if (endpoint) {
+                        globalRateLimiter.setEndpointCooldown(endpoint, ERROR_COOLDOWNS[errorCode]);
+                    }
+                    console.warn(`Rate limit detected (error ${errorCode}). Applied cooldown.`);
+                    return true;
                 }
-                if (endpoint) {
-                    globalRateLimiter.setEndpointCooldown(endpoint, ERROR_COOLDOWNS[errorCode]);
-                }
-                console.warn(`Rate limit detected (error ${errorCode}). Applied cooldown.`);
+                return false;
+            };
+
+            if (!responseBody || typeof responseBody !== 'object') {
+                return false;
+            }
+
+            if (applyCooldown(responseBody.error)) {
                 return true;
             }
-            return false;
-        };
 
-        if (!responseBody || typeof responseBody !== 'object') {
-            return false;
-        }
-
-        if (applyCooldown(responseBody.error)) {
-            return true;
-        }
-
-        if (Array.isArray(responseBody)) {
-            for (const item of responseBody) {
-                if (item && typeof item === 'object') {
-                    if (applyCooldown(item.error)) return true;
-                    if (item.errors && Array.isArray(item.errors)) {
-                        for (const err of item.errors) {
-                            const code = err.code || err.extensions?.code;
-                            if (applyCooldown(code)) return true;
+            if (Array.isArray(responseBody)) {
+                for (const item of responseBody) {
+                    if (item && typeof item === 'object') {
+                        if (applyCooldown(item.error)) return true;
+                        if (item.errors && Array.isArray(item.errors)) {
+                            for (const err of item.errors) {
+                                const code = err.code || err.extensions?.code;
+                                if (applyCooldown(code)) return true;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (responseBody.errors && Array.isArray(responseBody.errors)) {
-            for (const err of responseBody.errors) {
-                const code = err.code || err.extensions?.code;
-                if (applyCooldown(code)) return true;
+            if (responseBody.errors && Array.isArray(responseBody.errors)) {
+                for (const err of responseBody.errors) {
+                    const code = err.code || err.extensions?.code;
+                    if (applyCooldown(code)) return true;
+                }
             }
-        }
 
-        return false;
-    };
+            return false;
+        };
 
-    for (let i = 0; i < retries; i++) {
-        try {
-            const res = await requestFunction();
-            const adapted = adaptResponse(res);
+        for (let i = 0; i < retries; i++) {
+            try {
+                const res = await requestFunction();
+                const adapted = adaptResponse(res);
 
             // Persist Set-Cookie headers from every response so Facebook's
             // continuously-rotated session cookies (xs, fr, datr, etc.) stay
@@ -361,6 +361,9 @@ async function requestWithRetry(requestFunction, retries = 5, endpoint = '', thr
             await delay(backoffTime);
         }
     }
+} finally {
+    if (typeof release === "function") release();
+}
 }
 
 function parseProxyConfig(proxyUrl) {
