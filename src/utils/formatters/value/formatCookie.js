@@ -246,7 +246,7 @@ function parseUniversalCookies(input) {
                     value: parts[6].trim(),
                     domain: parts[0].trim().replace(/^\./, ""),
                     path: parts[2].trim() || "/",
-                    hostOnly: parts[1].toUpperCase() === 'TRUE',
+                    hostOnly: false,
                     creation: new Date(Number(parts[4]) > 0 ? Number(parts[4]) * 1000 : Date.now()).toISOString(),
                     lastAccessed: new Date().toISOString()
                 });

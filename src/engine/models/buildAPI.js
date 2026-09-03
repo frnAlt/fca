@@ -44,7 +44,7 @@ async function buildAPI(html, jar, netData, globalOptions, fbLinkFunc, errorRetr
     }
 
     if (!primaryProfile && !secondaryProfile && typeof html === 'string') {
-        const matchUser = html.match(/"USER_ID":"(\d+)"/) || html.match(/c_user=(\d+)/) || html.match(/"actorID":"(\d+)"/) || html.match(/ACCOUNT_ID":"(\d+)"/);
+        const matchUser = html.match(/"USER_ID":"([1-9]\d*)"/) || html.match(/c_user=([1-9]\d*)/) || html.match(/"actorID":"([1-9]\d*)"/) || html.match(/ACCOUNT_ID":"([1-9]\d*)"/);
         if (matchUser && matchUser[1]) {
             primaryProfile = { cookieString: () => `c_user=${matchUser[1]}` };
         }
