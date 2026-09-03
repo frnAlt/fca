@@ -88,15 +88,9 @@ module.exports = (defaultFuncs, api, ctx) => {
         return !!dbThread.isGroup;
       }
     }
-    try {
-      const info = await api.getThreadInfo(tid);
-      cache[tid] = !!info.isGroup;
-      return !!info.isGroup;
-    } catch (_) {
-      const fallback = tid.length >= 16;
-      cache[tid] = fallback;
-      return fallback;
-    }
+    const fallback = tid.length >= 16;
+    cache[tid] = fallback;
+    return fallback;
   }
 
   async function sendViaHttp(msg, threadID, replyToMessage, isGroup) {
@@ -339,18 +333,25 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         const isMultiRecipient = Array.isArray(threadID);
-        const usedMqtt = mqttReady && !isMultiRecipient && api.sendMessageMqtt;
+        const preferMqtt = ctx.globalOptions && ctx.globalOptions.useMqttSend === true;
 
         let result;
-        if (usedMqtt) {
+        if (preferMqtt && mqttReady && !isMultiRecipient && api.sendMessageMqtt) {
           try {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
-            // Fallback to HTTP on any MQTT delivery failure
             result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
           }
         } else {
-          result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+          try {
+            result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+          } catch (httpErr) {
+            if (mqttReady && !isMultiRecipient && api.sendMessageMqtt) {
+              result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
+            } else {
+              throw httpErr;
+            }
+          }
         }
         callback(null, result);
       } catch (sendErr) {
