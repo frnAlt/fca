@@ -28,14 +28,14 @@ module.exports = (defaultFuncs, api, ctx) => {
   }
 
   function detectAttachmentType(attachment) {
-    const p = attachment.path || '';
+    const p = attachment.path || attachment._path || attachment.name || '';
     const ext = p.toLowerCase().split('.').pop();
     const audioTypes = ['mp3', 'wav', 'aac', 'm4a', 'ogg', 'opus', 'flac'];
     const videoTypes = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv'];
     const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
     if (audioTypes.includes(ext)) return { voice_clip: "true" };
     if (videoTypes.includes(ext)) return { video: "true" };
-    if (imageTypes.includes(ext)) return { image: "true" };
+    if (imageTypes.includes(ext) || !ext) return { image: "true" };
     return { file: "true" };
   }
 
@@ -43,16 +43,27 @@ module.exports = (defaultFuncs, api, ctx) => {
     if (!utils.isReadableStream(attachment)) {
       throw new Error("Attachment should be a readable stream and not " + utils.getType(attachment) + ".");
     }
+    if (!attachment.path) attachment.path = "attachment.png";
     const uploadType = detectAttachmentType(attachment);
-    const oksir = await defaultFuncs.postFormData(
-      "https://upload.facebook.com/ajax/mercury/upload.php",
-      ctx.jar,
-      { upload_1024: attachment, ...uploadType },
-      {},
-      { ...ctx, requestThreadID: threadIDHint }
-    ).then(utils.parseAndCheckLogin(ctx, defaultFuncs));
-    if (oksir.error) throw new Error(JSON.stringify(oksir));
-    return oksir.payload.metadata[0];
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const oksir = await defaultFuncs.postFormData(
+          "https://upload.facebook.com/ajax/mercury/upload.php",
+          ctx.jar,
+          { upload_1024: attachment, ...uploadType },
+          {},
+          { ...ctx, requestThreadID: threadIDHint }
+        ).then(utils.parseAndCheckLogin(ctx, defaultFuncs));
+        if (oksir?.error) throw new Error(JSON.stringify(oksir));
+        if (oksir?.payload?.metadata?.[0]) return oksir.payload.metadata[0];
+      } catch (err) {
+        lastError = err;
+        if (attempt === 1) await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    throw lastError || new Error("Failed to upload attachment after retries.");
   }
 
   async function uploadAttachment(attachments, threadIDHint) {
@@ -60,8 +71,14 @@ module.exports = (defaultFuncs, api, ctx) => {
     const uploads = [];
     for (let i = 0; i < attachments.length; i += CONCURRENT_UPLOADS) {
       const batch = attachments.slice(i, i + CONCURRENT_UPLOADS);
-      const results = await Promise.all(batch.map(a => uploadSingleAttachment(a, threadIDHint)));
-      uploads.push(...results);
+      const results = await Promise.allSettled(batch.map(a => uploadSingleAttachment(a, threadIDHint)));
+      for (const res of results) {
+        if (res.status === "fulfilled" && res.value) {
+          uploads.push(res.value);
+        } else {
+          utils.error("Attachment upload warning", res.reason?.message || res.reason);
+        }
+      }
     }
     return uploads;
   }

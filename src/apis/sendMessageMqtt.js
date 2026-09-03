@@ -7,14 +7,14 @@ module.exports = (defaultFuncs, api, ctx) => {
   const antiSuspension = ctx.antiSuspension || globalAntiSuspension;
 
   function detectAttachmentType(attachment) {
-    const p = attachment.path || "";
+    const p = attachment.path || attachment._path || attachment.name || "";
     const ext = p.toLowerCase().split(".").pop();
     const audio = ["mp3", "wav", "aac", "m4a", "ogg", "opus", "flac"];
     const video = ["mp4", "mov", "avi", "mkv", "webm", "wmv", "flv"];
     const image = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"];
     if (audio.includes(ext)) return { voice_clip: "true" };
     if (video.includes(ext)) return { video: "true" };
-    if (image.includes(ext)) return { image: "true" };
+    if (image.includes(ext) || !ext) return { image: "true" };
     return { file: "true" };
   }
 
@@ -26,6 +26,7 @@ module.exports = (defaultFuncs, api, ctx) => {
         if (!utils.isReadableStream(attachments[i])) {
           throw { error: "Attachment should be a readable stream and not " + utils.getType(attachments[i]) + "." };
         }
+        if (!attachments[i].path) attachments[i].path = "attachment.png";
 
         if (i > 0) {
           await antiSuspension.addSmartDelay();
@@ -36,15 +37,24 @@ module.exports = (defaultFuncs, api, ctx) => {
           ...detectAttachmentType(attachments[i]),
         };
 
-        const upload = await defaultFuncs
-          .postFormData("https://upload.facebook.com/ajax/mercury/upload.php", ctx.jar, form, {}, { ...ctx, requestThreadID: String(ctx._lastThreadHint || "") })
-          .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-          .then(resData => {
-            if (resData.error) throw resData;
-            return resData.payload.metadata[0];
-          });
+        let upload = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            upload = await defaultFuncs
+              .postFormData("https://upload.facebook.com/ajax/mercury/upload.php", ctx.jar, form, {}, { ...ctx, requestThreadID: String(ctx._lastThreadHint || "") })
+              .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
+              .then(resData => {
+                if (resData.error) throw resData;
+                return resData.payload.metadata[0];
+              });
+            if (upload) break;
+          } catch (upErr) {
+            if (attempt === 2) throw upErr;
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
 
-        uploads.push(upload);
+        if (upload) uploads.push(upload);
       }
       callback(null, uploads);
     } catch (err) {
