@@ -460,16 +460,23 @@ function version() {
 function credits() {
   if (!shouldLog('info')) return;
   const { name, version: ver } = readLocalPackage();
-  console.log(applyTheme(`  ${name} v${ver}`));
-  console.log(pc.dim('  Developed and maintained by frnAlt'));
-  console.log(pc.dim('  GitHub  : https://github.com/frnAlt/Floppa-Chatbot'));
-  console.log(pc.dim(`  Package : ${name} (Native Local FCA)`));
+  const title = `${name} v${ver} (Native Local Engine)`;
+  console.log(applyTheme(`
+ ╔═══════════════════════════════════════════════════════════════════════╗
+ ║                     FLOPPA FACEBOOK CHAT API                          ║
+ ║  ${title.padEnd(69, ' ')}║
+ ║  Developer : Gtajisan (Farhan Muh Tasim)                              ║
+ ║  Maintainer: frnAlt                                                   ║
+ ║  Package   : @floppa/fca-native (Enhanced Local Core)                 ║
+ ║  Protocol  : Realtime MQTT / WebSocket TLS Engine                     ║
+ ║  Engine    : Floppa Multi-Engine Platform                             ║
+ ║  GitHub    : https://github.com/frnAlt/Floppa-Chatbot                 ║
+ ╚═══════════════════════════════════════════════════════════════════════╝`));
 }
 
 function startupBanner() {
   if (!shouldLog('info')) return;
   credits();
-  version();
   log('Initializing...');
 }
 
