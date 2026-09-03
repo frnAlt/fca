@@ -124,7 +124,7 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         fg: false,
         d: cid,
         ct: 'websocket',
-        aid: '219994525426954',
+        aid: ctx.appID || '219994525426954',
         aids: null,
         mqtt_sid: '',
         cp: 3,
@@ -139,7 +139,36 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         a: cachedUA,
         php_override: ""
     };
-    const cookies = ctx.jar.getCookiesSync('https://www.facebook.com').join('; ');
+    const cookieMap = new Map();
+    if (ctx.jar && typeof ctx.jar.getCookiesSync === 'function') {
+        const queryUrls = [
+            'https://www.facebook.com',
+            'https://facebook.com',
+            'https://edge-chat.facebook.com',
+            'https://m.facebook.com'
+        ];
+        for (const u of queryUrls) {
+            try {
+                for (const c of ctx.jar.getCookiesSync(u)) {
+                    if (c && c.key && !cookieMap.has(c.key)) {
+                        cookieMap.set(c.key, c.cookieString ? c.cookieString() : `${c.key}=${c.value}`);
+                    }
+                }
+            } catch (_) {}
+        }
+    }
+    if (ctx.jar && typeof ctx.jar.toJSON === 'function') {
+        try {
+            const jsonCookies = ctx.jar.toJSON()?.cookies || [];
+            for (const c of jsonCookies) {
+                const key = c.key || c.name;
+                if (key && !cookieMap.has(key)) {
+                    cookieMap.set(key, `${key}=${c.value}`);
+                }
+            }
+        } catch (_) {}
+    }
+    const cookies = Array.from(cookieMap.values()).join('; ');
     let host;
     if (ctx.mqttEndpoint) {
         // Facebook can return either a URL with an existing query string or a
