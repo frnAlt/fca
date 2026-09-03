@@ -222,13 +222,17 @@ module.exports = (defaultFuncs, api, ctx) => {
       });
       
       // Set timeout to prevent hanging connections (fast HTTP fallback on timeout)
+      const ackTimeoutMs = (ctx.globalOptions && ctx.globalOptions.mqttSendTimeoutMs) || 10000;
       responseTimeout = setTimeout(() => {
         if (done) return;
         cleanup();
-        const err = { error: "Timeout waiting for ACK" };
+        const err = { error: "Timeout waiting for ACK (" + ackTimeoutMs + "ms)" };
+        if (ctx.globalOptions?.debug || process.env.DEBUG) {
+          utils.warn("sendMessageMqtt", `MQTT /ls_resp ACK timed out after ${ackTimeoutMs}ms`);
+        }
         if (callback) callback(err);
         reject(err);
-      }, 2500);
+      }, ackTimeoutMs);
     });
   }
 

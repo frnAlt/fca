@@ -209,6 +209,12 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         return stream;
     }
 
+    if (ctx.mqttClient) {
+        try {
+            ctx.mqttClient.removeAllListeners();
+            if (ctx.mqttClient.connected) ctx.mqttClient.end(true);
+        } catch (_) {}
+    }
     const mqttClient = new mqtt.Client(buildMqttStream, options);
     // Keep mqtt's callback API intact. Wrapping publish in a Promise caused
     // every fire-and-forget publish to become an unhandled rejection whenever
@@ -251,6 +257,13 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         if (ctx.mqttClient !== mqttClient) return;
         const msg = String(err && err.message ? err.message : err || "");
 
+        if (/Invalid header flag bits|must be 0x0 for puback/i.test(msg)) {
+            if (ctx.globalOptions?.debug || process.env.DEBUG) {
+                utils.log("MQTT", `PUBACK header flag warning ignored: ${msg}`);
+            }
+            return;
+        }
+
         if ((ctx._ending || ctx._cycling) && isEndingLikeError(msg)) {
             utils.log("MQTT", "Expected error during shutdown: " + msg);
             return;
@@ -276,11 +289,11 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
 
         // Only trigger logout on specific authentication failures
         // Avoid false positives from unrelated 403 errors or messages containing "auth"
-        const isActualAuthError = /^not logged in|^not logged in\.|blocked.*login|checkpoint|^401$|^403 forbidden$/i.test(msg);
+        const isActualAuthError = /^not logged in|^not logged in\.|blocked.*login|checkpoint|1357004|^401$|^403 forbidden$/i.test(msg);
         if (isActualAuthError) {
             try { mqttClient.end(true); } catch (_) { }
             try { if (ctx._autoCycleTimer) clearInterval(ctx._autoCycleTimer); } catch (_) { }
-            emitAuthError(/blocked|checkpoint/i.test(msg) ? "login_blocked" : "not_logged_in", msg);
+            emitAuthError(/blocked|checkpoint|1357004/i.test(msg) ? "login_blocked" : "not_logged_in", msg);
             return;
         }
 
@@ -360,37 +373,48 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
             }
         }, watchdogInterval);
 
-        mqttClient.subscribe(topics, { qos: 1 }, (error) => {
-            if (!error || ctx.mqttClient !== mqttClient || ctx._ending) return;
-            utils.warn("MQTT", `Subscription failed: ${error.message || error}`);
-            requestClientReconnect(
-                (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 2000,
-                "MQTT subscription failed"
-            );
+        mqttClient.subscribe(topics, { qos: 1 }, (error, granted) => {
+            if (ctx.mqttClient !== mqttClient || ctx._ending) return;
+            if (error) {
+                utils.warn("MQTT", `Subscription failed: ${error.message || error}`);
+                requestClientReconnect(
+                    (ctx._mqttOpt && ctx._mqttOpt.reconnectDelayMs) || 2000,
+                    "MQTT subscription failed"
+                );
+                return;
+            }
+
+            if (ctx.globalOptions?.debug || process.env.DEBUG) {
+                utils.log("MQTT", `Subscribed to ${topics.length} topics successfully. (Granted: ${granted ? granted.length : 0})`);
+            }
+
+            const queue = { 
+                sync_api_version: 11, 
+                max_deltas_able_to_process: 200, 
+                delta_batch_size: 200, 
+                encoding: "JSON", 
+                entity_fbid: ctx.userID,
+                initial_titan_sequence_id: ctx.lastSeqId,
+                device_params: null
+            };
+
+            let topic;
+            if (ctx.syncToken) {
+                topic = "/messenger_sync_get_diffs";
+                queue.last_seq_id = ctx.lastSeqId;
+                queue.sync_token = ctx.syncToken;
+            } else {
+                topic = "/messenger_sync_create_queue";
+            }
+
+            mqttClient.publish(topic, JSON.stringify(queue), { qos: 1, retain: false }, (pubErr) => {
+                if (pubErr && ctx.mqttClient === mqttClient) {
+                    utils.warn("MQTT", `Publish ${topic} error: ${pubErr.message || pubErr}`);
+                }
+            });
+            mqttClient.publish("/foreground_state", JSON.stringify({ foreground: chatOn }), { qos: 1 });
+            mqttClient.publish("/set_client_settings", JSON.stringify({ make_user_available_when_in_foreground: true }), { qos: 1 });
         });
-
-        const queue = { 
-            sync_api_version: 11, 
-            max_deltas_able_to_process: 200, 
-            delta_batch_size: 200, 
-            encoding: "JSON", 
-            entity_fbid: ctx.userID,
-            initial_titan_sequence_id: ctx.lastSeqId,
-            device_params: null
-        };
-
-        let topic;
-        if (ctx.syncToken) {
-            topic = "/messenger_sync_get_diffs";
-            queue.last_seq_id = ctx.lastSeqId;
-            queue.sync_token = ctx.syncToken;
-        } else {
-            topic = "/messenger_sync_create_queue";
-        }
-
-        mqttClient.publish(topic, JSON.stringify(queue), { qos: 1, retain: false });
-        mqttClient.publish("/foreground_state", JSON.stringify({ foreground: chatOn }), { qos: 1 });
-        mqttClient.publish("/set_client_settings", JSON.stringify({ make_user_available_when_in_foreground: true }), { qos: 1 });
 
         const tmsTimeoutDelay = 10000;
         ctx._tmsTimeout = setTimeout(() => {

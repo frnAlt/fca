@@ -374,6 +374,14 @@ async function loginHelper(credentials, globalOptions, callback, setOptionsFunc,
         if (api.httpPostFormData && typeof api.httpPostFormData === 'function') {
             api.postFormData = api.httpPostFormData;
         }
+        if (api.sendMessage && typeof api.sendMessage === 'function') {
+            api.OldMessage = (msg, threadID, callback, replyToMessage, isSingleUser) => {
+                return api.sendMessage(msg, threadID, callback, replyToMessage, isSingleUser !== undefined ? !isSingleUser : false);
+            };
+            api.sendMessageDM = (msg, threadID, callback, replyToMessage) => {
+                return api.sendMessage(msg, threadID, callback, replyToMessage, false);
+            };
+        }
 
         try {
             const models = require('../../database/models');

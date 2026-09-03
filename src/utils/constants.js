@@ -272,7 +272,7 @@ function styledLevel(level) {
 // ─── Logger state ───────────────────────────────────────────────────────────
 
 let logging = true;
-let logLevel = 'info';
+let logLevel = (process.env.DEBUG || (typeof process !== "undefined" && process.argv && process.argv.includes('--debug'))) ? 'debug' : 'info';
 
 const logLevels = {
   trace: 0,

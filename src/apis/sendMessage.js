@@ -76,6 +76,18 @@ module.exports = (defaultFuncs, api, ctx) => {
     const tid = threadID.toString();
     const cache = getThreadCache();
     if (Object.prototype.hasOwnProperty.call(cache, tid)) return !!cache[tid];
+    if (ctx.threadTypes && ctx.threadTypes[tid]) {
+      const isGrp = ctx.threadTypes[tid] === 'group';
+      cache[tid] = isGrp;
+      return isGrp;
+    }
+    if (global.db && Array.isArray(global.db.allThreadData)) {
+      const dbThread = global.db.allThreadData.find(t => t.threadID == tid);
+      if (dbThread && dbThread.isGroup !== undefined) {
+        cache[tid] = !!dbThread.isGroup;
+        return !!dbThread.isGroup;
+      }
+    }
     try {
       const info = await api.getThreadInfo(tid);
       cache[tid] = !!info.isGroup;

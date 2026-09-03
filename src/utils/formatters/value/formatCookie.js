@@ -232,13 +232,14 @@ function parseUniversalCookies(input) {
     }
 
     // Check for Netscape format
-    if (str.includes('\t') || str.startsWith('# Netscape') || str.startsWith('# HTTP Cookie')) {
+    if (str.includes('\t') || str.startsWith('# Netscape') || str.startsWith('# HTTP Cookie') || str.includes('#HttpOnly_') || str.includes('.facebook.com')) {
         const lines = str.split(/\r?\n/);
         const cookies = [];
         for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#')) continue;
-            const parts = trimmed.split(/\t+/);
+            let trimmed = line.trim();
+            if (!trimmed || (trimmed.startsWith('#') && !trimmed.startsWith('#HttpOnly_'))) continue;
+            trimmed = trimmed.replace(/^#HttpOnly_/i, '').trim();
+            const parts = trimmed.split(/\t+|\s{2,}/);
             if (parts.length >= 7) {
                 cookies.push({
                     key: parts[5].trim(),
