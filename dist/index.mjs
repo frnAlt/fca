@@ -23735,7 +23735,7 @@ var require_parse_delta = __commonJS({
           case "ForcedFetch": {
             if (!delta.threadKey) return;
             const mid = delta.messageId;
-            const tid = delta.threadKey.threadFbId;
+            const tid = delta.threadKey.threadFbId || delta.threadKey.otherUserFbId;
             if (mid && tid) {
               const form = {
                 av: ctx.globalOptions.pageID,
@@ -23779,33 +23779,116 @@ var require_parse_delta = __commonJS({
                       }
                       break;
                     case "UserMessage": {
-                      const event = {
-                        type: "message",
-                        senderID: formatID6(fetchData.message_sender.id),
-                        body: fetchData.message.text || "",
-                        threadID: formatID6(tid.toString()),
-                        messageID: fetchData.message_id,
-                        attachments: [
-                          {
+                      if (!ctx.globalOptions.selfListen && fetchData.message_sender && fetchData.message_sender.id.toString() === ctx.userID) return;
+                      if (!ctx.loggedIn) return;
+
+                      const attachments = [];
+                      if (fetchData.blob_attachments && fetchData.blob_attachments.length > 0) {
+                        fetchData.blob_attachments.forEach(att => {
+                          try {
+                            attachments.push(_formatAttachment2(att, void 0));
+                          } catch (ex) {
+                            attachments.push({
+                              type: "unknown",
+                              error: ex.message || ex,
+                              rawAttachment: att
+                            });
+                          }
+                        });
+                      } else if (fetchData.extensible_attachment && Object.keys(fetchData.extensible_attachment).length > 0) {
+                        try {
+                          attachments.push(_formatAttachment2({ extensible_attachment: fetchData.extensible_attachment }, void 0));
+                        } catch (ex) {
+                          const storyAtt = fetchData.extensible_attachment.story_attachment || {};
+                          attachments.push({
                             type: "share",
                             ID: fetchData.extensible_attachment.legacy_attachment_id,
-                            url: fetchData.extensible_attachment.story_attachment.url,
-                            title: fetchData.extensible_attachment.story_attachment.title_with_entities.text,
-                            description: fetchData.extensible_attachment.story_attachment.description.text,
-                            source: fetchData.extensible_attachment.story_attachment.source,
-                            image: ((fetchData.extensible_attachment.story_attachment.media || {}).image || {}).uri,
-                            width: ((fetchData.extensible_attachment.story_attachment.media || {}).image || {}).width,
-                            height: ((fetchData.extensible_attachment.story_attachment.media || {}).image || {}).height,
-                            playable: (fetchData.extensible_attachment.story_attachment.media || {}).is_playable || false,
-                            duration: (fetchData.extensible_attachment.story_attachment.media || {}).playable_duration_in_ms || 0,
+                            url: storyAtt.url,
+                            title: storyAtt.title_with_entities ? storyAtt.title_with_entities.text : null,
+                            description: storyAtt.description ? storyAtt.description.text : null,
+                            source: storyAtt.source ? (storyAtt.source.text || storyAtt.source) : null,
+                            image: storyAtt.media && storyAtt.media.image ? storyAtt.media.image.uri : null,
+                            width: storyAtt.media && storyAtt.media.image ? storyAtt.media.image.width : null,
+                            height: storyAtt.media && storyAtt.media.image ? storyAtt.media.image.height : null,
+                            playable: storyAtt.media ? (storyAtt.media.is_playable || false) : false,
+                            duration: storyAtt.media ? (storyAtt.media.playable_duration_in_ms || 0) : 0,
+                            playableUrl: storyAtt.media && storyAtt.media.playable_url ? storyAtt.media.playable_url : null,
                             subattachments: fetchData.extensible_attachment.subattachments,
-                            properties: fetchData.extensible_attachment.story_attachment.properties
+                            properties: storyAtt.properties || {}
+                          });
+                        }
+                      } else if (fetchData.sticker) {
+                        attachments.push({
+                          type: "sticker",
+                          ID: fetchData.sticker.id,
+                          url: fetchData.sticker.url,
+                          packID: fetchData.sticker.pack ? fetchData.sticker.pack.id : null,
+                          width: fetchData.sticker.width,
+                          height: fetchData.sticker.height
+                        });
+                      }
+
+                      const mentions = {};
+                      if (fetchData.message && fetchData.message.ranges) {
+                        fetchData.message.ranges.forEach(mention => {
+                          if (mention.entity && mention.entity.id && fetchData.message.text) {
+                            mentions[mention.entity.id] = fetchData.message.text.substring(
+                              mention.offset,
+                              mention.offset + mention.length
+                            );
                           }
-                        ],
-                        mentions: {},
+                        });
+                      }
+
+                      const event = {
+                        type: "message",
+                        senderID: formatID6(fetchData.message_sender ? fetchData.message_sender.id : ""),
+                        body: (fetchData.message && fetchData.message.text) || "",
+                        threadID: formatID6(tid.toString()),
+                        messageID: fetchData.message_id,
+                        attachments: attachments,
+                        mentions: mentions,
                         timestamp: parseInt(fetchData.timestamp_precise),
-                        isGroup: fetchData.message_sender.id !== tid.toString()
+                        isGroup: Boolean(delta.threadKey.threadFbId)
                       };
+
+                      if (fetchData.replied_to_message && fetchData.replied_to_message.message) {
+                        const rep = fetchData.replied_to_message.message;
+                        const repMentions = {};
+                        if (rep.message && rep.message.ranges) {
+                          rep.message.ranges.forEach(mention => {
+                            if (mention.entity && mention.entity.id && rep.message.text) {
+                              repMentions[mention.entity.id] = rep.message.text.substring(mention.offset, mention.offset + mention.length);
+                            }
+                          });
+                        }
+                        const repAttachments = [];
+                        if (rep.blob_attachments && rep.blob_attachments.length > 0) {
+                          rep.blob_attachments.forEach(att => {
+                            try {
+                              repAttachments.push(_formatAttachment2(att, void 0));
+                            } catch (ex) {
+                              repAttachments.push({ type: "unknown", error: ex.message || ex, rawAttachment: att });
+                            }
+                          });
+                        }
+                        event.type = "message_reply";
+                        event.messageReply = {
+                          threadID: formatID6(tid.toString()),
+                          messageID: rep.message_id,
+                          senderID: formatID6(rep.message_sender ? rep.message_sender.id : ""),
+                          attachments: repAttachments,
+                          body: (rep.message && rep.message.text) || "",
+                          isGroup: Boolean(delta.threadKey.threadFbId),
+                          mentions: repMentions,
+                          timestamp: parseInt(rep.timestamp_precise || 0)
+                        };
+                      }
+
+                      if (ctx.globalOptions.autoMarkDelivery) {
+                        api.markAsDelivered(event.threadID, event.messageID);
+                      }
+
                       globalCallback(null, event);
                       break;
                     }
