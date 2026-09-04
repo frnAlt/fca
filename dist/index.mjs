@@ -19779,7 +19779,7 @@ function createRealtimeListener(deps) {
         ctx._getSeqRetryTimer = null;
       }
       const form = {
-        av: ctx.globalOptions.pageID,
+        av: ctx.i_userID || ctx.userID || ctx.globalOptions.pageID,
         queries: JSON.stringify({
           o0: {
             doc_id: "3336396659757871",
@@ -19791,7 +19791,8 @@ function createRealtimeListener(deps) {
               includeSeqID: true
             }
           }
-        })
+        }),
+        batch_name: "MessengerGraphQLThreadlistFetcher"
       };
       logger("mqtt getSeqID call", "info");
       return getSeqIDFactory(defaultFuncs, api, ctx, globalCallback, form).then(() => {

@@ -909,7 +909,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
         }
         try {
             const form = {
-                av: ctx.globalOptions.pageID,
+                av: ctx.i_userID || ctx.userID || ctx.globalOptions.pageID,
                 queries: JSON.stringify({
                     o0: {
                         doc_id: "3336396659757871",
@@ -921,7 +921,8 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                             includeSeqID: true
                         }
                     }
-                })
+                }),
+                batch_name: "MessengerGraphQLThreadlistFetcher"
             };
             utils.log("MQTT", "Getting sequence ID...");
             ctx.t_mqttCalled = false;
@@ -930,24 +931,17 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                 resData = await defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
                     .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
                     .then(utils.saveCookies(ctx.jar));
-            } catch (_) {
-                try {
-                    const fallbackForm = {
-                        doc_id: "3336396659757871",
-                        variables: JSON.stringify({
-                            limit: 1,
-                            before: null,
-                            tags: ["INBOX"],
-                            includeDeliveryReceipts: false,
-                            includeSeqID: true
-                        })
-                    };
-                    resData = await defaultFuncs.post("https://www.facebook.com/api/graphql/", ctx.jar, fallbackForm)
-                        .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
-                        .then(utils.saveCookies(ctx.jar));
-                } catch (_) {
-                    ctx.lastSeqId = ctx.lastSeqId || "-1";
-                    return;
+            } catch (batchErr) {
+                utils.warn("MQTT", `getSeqID graphqlbatch failed: ${batchErr?.message || batchErr}`);
+                if (typeof api.getThreadList === 'function') {
+                    try {
+                        await api.getThreadList(1, null, ["INBOX"]);
+                        if (ctx.lastSeqId && ctx.lastSeqId !== "-1") {
+                            return;
+                        }
+                    } catch (tlErr) {
+                        utils.warn("MQTT", `getSeqID getThreadList fallback failed: ${tlErr?.message || tlErr}`);
+                    }
                 }
             }
             
@@ -978,10 +972,28 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
             if (syncSeqId) {
                 ctx.lastSeqId = String(syncSeqId);
                 utils.log("MQTT", `Obtained sequence ID: ${ctx.lastSeqId}`);
-            } else {
-                ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "-1";
+            } else if (!ctx.lastSeqId || ctx.lastSeqId === "-1") {
+                try {
+                    const htmlRes = await defaultFuncs.get("https://www.facebook.com/messages/t/", ctx.jar);
+                    const html = typeof htmlRes === "string" ? htmlRes : (htmlRes?.body || "");
+                    const match = html.match(/irisSeqID:"(.+?)"/)
+                        || html.match(/"irisSeqID"\s*:\s*"([^"]+)"/)
+                        || html.match(/"sync_sequence_id"\s*:\s*"([^"]+)"/)
+                        || html.match(/"sequence_id"\s*:\s*"([^"]+)"/)
+                        || html.match(/\["irisSeqID",\s*\[\],\s*\{"seqID"\s*:\s*"([^"]+)"\}/);
+                    if (match) {
+                        ctx.lastSeqId = String(match[1] || match[2]);
+                        utils.log("MQTT", `Obtained sequence ID from messages HTML: ${ctx.lastSeqId}`);
+                    }
+                } catch (htmlErr) {
+                    utils.warn("MQTT", `getSeqID HTML extraction failed: ${htmlErr?.message || htmlErr}`);
+                }
             }
-        } catch (_) {
+            if (!ctx.lastSeqId) {
+                ctx.lastSeqId = "-1";
+            }
+        } catch (err) {
+            utils.warn("MQTT", `getSeqID caught unexpected error: ${err?.message || err}`);
             ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "-1";
         }
     };

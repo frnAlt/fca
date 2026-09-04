@@ -200,7 +200,7 @@ module.exports = function (defaultFuncs, api, ctx) {
             before: timestamp,
             tags: tags,
             includeDeliveryReceipts: true,
-            includeSeqID: false,
+            includeSeqID: true,
           },
         },
       }),
@@ -212,28 +212,28 @@ module.exports = function (defaultFuncs, api, ctx) {
         .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
         .then(utils.parseAndCheckLogin(ctx, defaultFuncs));
 
-      if (!resData || !Array.isArray(resData) || resData.length === 0) {
+      if (!resData) {
         throw new Error("getThreadList: Invalid response from server");
       }
 
-      const lastResult = resData[resData.length - 1];
+      const raw = Array.isArray(resData) ? (resData[0] || {}) : (resData || {});
+      const lastResult = Array.isArray(resData) ? resData[resData.length - 1] : raw;
       if (lastResult && lastResult.error_results && lastResult.error_results > 0) {
-        throw new Error(JSON.stringify(resData[0]?.o0?.errors || "Unknown error"));
+        throw new Error(JSON.stringify(raw?.o0?.errors || raw?.errors || "Unknown error"));
       }
 
       if (lastResult && lastResult.successful_results === 0) {
         throw new Error("getThreadList: there was no successful_results");
       }
 
-      if (!resData[0] || !resData[0].o0 || !resData[0].o0.data) {
-        throw new Error("getThreadList: Invalid data structure in response");
-      }
-
-      const viewer = resData[0].o0.data && resData[0].o0.data.viewer;
+      const viewer = raw?.o0?.data?.viewer || raw?.data?.viewer || raw?.viewer;
       if (!viewer || !viewer.message_threads) {
         throw new Error("getThreadList: Facebook returned no message_threads data (session may be invalid)");
       }
-      let nodes = viewer.message_threads.nodes;
+      if (viewer.message_threads.sync_sequence_id) {
+        ctx.lastSeqId = String(viewer.message_threads.sync_sequence_id);
+      }
+      let nodes = viewer.message_threads.nodes || [];
       if (timestamp) {
         nodes.shift();
       }
