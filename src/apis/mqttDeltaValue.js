@@ -17,6 +17,10 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
           return;
         }
         if (fmtMsg) {
+            if (fmtMsg.threadID && typeof fmtMsg.isGroup === "boolean") {
+                if (!ctx.threadTypeCache) ctx.threadTypeCache = Object.create(null);
+                ctx.threadTypeCache[fmtMsg.threadID.toString()] = fmtMsg.isGroup;
+            }
             utils.log("NewMessage", `Received message [${fmtMsg.threadID}] ${fmtMsg.senderID} -> "${fmtMsg.body || '[Attachment]'}"`);
             if (ctx.globalOptions.autoMarkDelivery) {
                 api.markAsDelivered(fmtMsg.threadID, fmtMsg.messageID);
@@ -123,6 +127,10 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               timestamp: delta.deltaMessageReply.repliedToMessage.messageMetadata.timestamp,
               participantIDs: (delta.deltaMessageReply.repliedToMessage.participants || []).map(e => e.toString())
             };
+          }
+          if (callbackToReturn.threadID && typeof callbackToReturn.isGroup === "boolean") {
+            if (!ctx.threadTypeCache) ctx.threadTypeCache = Object.create(null);
+            ctx.threadTypeCache[callbackToReturn.threadID.toString()] = callbackToReturn.isGroup;
           }
           if (ctx.globalOptions.autoMarkDelivery) api.markAsDelivered(callbackToReturn.threadID, callbackToReturn.messageID);
           if (!ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID) return;
@@ -359,6 +367,11 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
                       mentions: repMentions,
                       timestamp: parseInt(rep.timestamp_precise || 0)
                     };
+                  }
+
+                  if (event.threadID && typeof event.isGroup === "boolean") {
+                    if (!ctx.threadTypeCache) ctx.threadTypeCache = Object.create(null);
+                    ctx.threadTypeCache[event.threadID.toString()] = event.isGroup;
                   }
 
                   if (ctx.globalOptions.autoMarkDelivery) {

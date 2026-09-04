@@ -89,9 +89,12 @@ module.exports = (defaultFuncs, api, ctx) => {
   }
 
   async function isGroupThread(threadID, explicitIsGroup) {
-    if (utils.getType(explicitIsGroup) === "Boolean") return !!explicitIsGroup;
     const tid = threadID.toString();
     const cache = getThreadCache();
+    if (utils.getType(explicitIsGroup) === "Boolean") {
+      cache[tid] = !!explicitIsGroup;
+      return !!explicitIsGroup;
+    }
     if (Object.prototype.hasOwnProperty.call(cache, tid)) return !!cache[tid];
     if (ctx.threadTypes && ctx.threadTypes[tid]) {
       const isGrp = ctx.threadTypes[tid] === 'group';
@@ -105,12 +108,23 @@ module.exports = (defaultFuncs, api, ctx) => {
         return !!dbThread.isGroup;
       }
     }
+    if (global.db && Array.isArray(global.db.allUserData)) {
+      const isKnownUser = global.db.allUserData.some(u => u.userID == tid);
+      if (isKnownUser) {
+        cache[tid] = false;
+        return false;
+      }
+    }
+    if (ctx.userID && String(ctx.userID) === tid) {
+      cache[tid] = false;
+      return false;
+    }
     const fallback = tid.length >= 16;
     cache[tid] = fallback;
     return fallback;
   }
 
-  async function sendViaHttp(msg, threadID, replyToMessage, isGroup) {
+  async function sendViaHttp(msg, threadID, replyToMessage, isGroup, isRetry = false) {
     const isSingleUser = !(await isGroupThread(threadID, isGroup));
     let messageAndOTID = utils.generateOfflineThreadingID();
     let form = {
@@ -234,16 +248,33 @@ module.exports = (defaultFuncs, api, ctx) => {
       form["creator_info[profileURI]"] = "https://www.facebook.com/profile.php?id=" + ctx.userID;
     }
 
-    const resData = await defaultFuncs.post(
-      "https://www.facebook.com/messaging/send/",
-      ctx.jar,
-      form,
-      { ...ctx, requestThreadID: threadID }
-    ).then(utils.parseAndCheckLogin(ctx, defaultFuncs));
+    let resData;
+    try {
+      resData = await defaultFuncs.post(
+        "https://www.facebook.com/messaging/send/",
+        ctx.jar,
+        form,
+        { ...ctx, requestThreadID: threadID }
+      ).then(utils.parseAndCheckLogin(ctx, defaultFuncs));
+    } catch (httpErr) {
+      const errStr = String(httpErr?.message || httpErr || "");
+      if (!isRetry && typeof threadID === "string" && (errStr.includes("1545012") || errStr.includes("1545003") || errStr.includes("conversation"))) {
+        utils.warn("sendMessage", `Thread type mismatch for ${threadID}, retrying with inverted type...`);
+        const cache = getThreadCache();
+        cache[threadID.toString()] = isSingleUser;
+        return sendViaHttp(msg, threadID, replyToMessage, isSingleUser, true);
+      }
+      throw httpErr;
+    }
 
     if (!resData) throw new Error("Send message failed.");
     if (resData.error) {
-      if (resData.error === 1545012) utils.warn("sendMessage", "Got error 1545012. This might mean that you're not part of the conversation " + threadID);
+      if (!isRetry && typeof threadID === "string" && (resData.error === 1545012 || resData.error === 1545003)) {
+        utils.warn("sendMessage", `Got error ${resData.error} for ${threadID}, retrying with inverted thread type...`);
+        const cache = getThreadCache();
+        cache[threadID.toString()] = isSingleUser;
+        return sendViaHttp(msg, threadID, replyToMessage, isSingleUser, true);
+      }
       antiSuspension.detectSuspensionSignal(String(resData.error) + ' ' + JSON.stringify(resData));
       throw new Error(JSON.stringify(resData));
     }
@@ -257,7 +288,7 @@ module.exports = (defaultFuncs, api, ctx) => {
     return messageInfo;
   }
 
-  return async (msg, threadID, callback, replyToMessage, isGroup) => {
+  const sendMessage = async (msg, threadID, callback, replyToMessage, isGroup) => {
     if (!callback && (utils.getType(threadID) === "Function" || utils.getType(threadID) === "AsyncFunction")) {
       throw new Error("Pass a threadID as a second argument.");
     }
@@ -364,10 +395,10 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         const isMultiRecipient = Array.isArray(threadID);
-        const usedMqtt = mqttReady && !isMultiRecipient && api.sendMessageMqtt;
+        const preferMqtt = Boolean(ctx.globalOptions?.preferMqttSend && mqttReady && !isMultiRecipient && api.sendMessageMqtt);
 
         let result;
-        if (usedMqtt) {
+        if (preferMqtt) {
           try {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
@@ -411,4 +442,13 @@ module.exports = (defaultFuncs, api, ctx) => {
     }
     return returnPromise;
   };
+
+  api.sendMessageDM = (msg, userID, callback, replyToMessage) => {
+    return sendMessage(msg, userID, callback, replyToMessage, false);
+  };
+  api.sendMessageGroup = (msg, threadID, callback, replyToMessage) => {
+    return sendMessage(msg, threadID, callback, replyToMessage, true);
+  };
+
+  return sendMessage;
 };

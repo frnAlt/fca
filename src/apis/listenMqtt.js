@@ -124,7 +124,7 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         fg: false,
         d: cid,
         ct: 'websocket',
-        aid: ctx.appID || '219994525426954',
+        aid: 219994525426954,
         aids: null,
         mqtt_sid: '',
         cp: 3,
@@ -415,34 +415,34 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
             if (ctx.globalOptions?.debug || process.env.DEBUG) {
                 utils.log("MQTT", `Subscribed to ${topics.length} topics successfully. (Granted: ${granted ? granted.length : 0})`);
             }
-
-            const queue = { 
-                sync_api_version: 10, 
-                max_deltas_able_to_process: 1000, 
-                delta_batch_size: 500, 
-                encoding: "JSON", 
-                entity_fbid: ctx.userID
-            };
-
-            let topic;
-            if (ctx.syncToken) {
-                topic = "/messenger_sync_get_diffs";
-                queue.last_seq_id = ctx.lastSeqId;
-                queue.sync_token = ctx.syncToken;
-            } else {
-                topic = "/messenger_sync_create_queue";
-                queue.initial_titan_sequence_id = ctx.lastSeqId;
-                queue.device_params = null;
-            }
-
-            mqttClient.publish(topic, JSON.stringify(queue), { qos: 1, retain: false }, (pubErr) => {
-                if (pubErr && ctx.mqttClient === mqttClient) {
-                    utils.warn("MQTT", `Publish ${topic} error: ${pubErr.message || pubErr}`);
-                }
-            });
-            mqttClient.publish("/foreground_state", JSON.stringify({ foreground: chatOn }), { qos: 1 });
-            mqttClient.publish("/set_client_settings", JSON.stringify({ make_user_available_when_in_foreground: true }), { qos: 1 });
         });
+
+        const queue = { 
+            sync_api_version: 11, 
+            max_deltas_able_to_process: 200, 
+            delta_batch_size: 200, 
+            encoding: "JSON", 
+            entity_fbid: ctx.userID,
+            initial_titan_sequence_id: ctx.lastSeqId,
+            device_params: null
+        };
+
+        let topic;
+        if (ctx.syncToken) {
+            topic = "/messenger_sync_get_diffs";
+            queue.last_seq_id = ctx.lastSeqId;
+            queue.sync_token = ctx.syncToken;
+        } else {
+            topic = "/messenger_sync_create_queue";
+        }
+
+        mqttClient.publish(topic, JSON.stringify(queue), { qos: 1, retain: false }, (pubErr) => {
+            if (pubErr && ctx.mqttClient === mqttClient) {
+                utils.warn("MQTT", `Publish ${topic} error: ${pubErr.message || pubErr}`);
+            }
+        });
+        mqttClient.publish("/foreground_state", JSON.stringify({ foreground: chatOn }), { qos: 1 });
+        mqttClient.publish("/set_client_settings", JSON.stringify({ make_user_available_when_in_foreground: true }), { qos: 1 });
 
         const tmsTimeoutDelay = 10000;
         ctx._tmsTimeout = setTimeout(() => {
