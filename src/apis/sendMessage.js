@@ -178,20 +178,34 @@ module.exports = (defaultFuncs, api, ctx) => {
       form.body = msg.emoji;
       form["tags[0]"] = "hot_emoji_size:" + msg.emojiSize;
     }
-    if (msg.mentions) {
+    if (Array.isArray(msg.mentions) && msg.mentions.length > 0) {
+      const emptyChar = '\u200E';
+      if (msg.body && !form.body?.startsWith(emptyChar)) {
+        form["body"] = emptyChar + msg.body;
+      }
+      let mentionIdx = 0;
       for (let i = 0; i < msg.mentions.length; i++) {
         const mention = msg.mentions[i];
-        const tag = mention.tag;
-        if (typeof tag !== "string") throw new Error("Mention tags must be strings.");
-        const offset = msg.body.indexOf(tag, mention.fromIndex || 0);
-        if (offset < 0) utils.warn("handleMention", 'Mention for "' + tag + '" not found in message string.');
+        if (!mention) continue;
+        const tag = String(mention.tag || "");
+        if (!tag) continue;
+        const fromIndex = Number.isInteger(mention.fromIndex) && mention.fromIndex >= 0 ? mention.fromIndex : 0;
+        let offset = (msg.body || "").indexOf(tag, fromIndex);
+        if (offset < 0 && tag.startsWith("@")) {
+          offset = (msg.body || "").indexOf(tag.slice(1), fromIndex);
+        } else if (offset < 0 && !tag.startsWith("@")) {
+          offset = (msg.body || "").indexOf("@" + tag, fromIndex);
+        }
+        if (offset < 0) {
+          utils.warn("handleMention", 'Mention for "' + tag + '" not found in message string.');
+          continue;
+        }
         const id = mention.id || 0;
-        const emptyChar = '\u200E';
-        form["body"] = emptyChar + msg.body;
-        form["profile_xmd[" + i + "][offset]"] = offset + 1;
-        form["profile_xmd[" + i + "][length]"] = tag.length;
-        form["profile_xmd[" + i + "][id]"] = id;
-        form["profile_xmd[" + i + "][type]"] = "p";
+        form["profile_xmd[" + mentionIdx + "][offset]"] = offset + 1;
+        form["profile_xmd[" + mentionIdx + "][length]"] = tag.length;
+        form["profile_xmd[" + mentionIdx + "][id]"] = id;
+        form["profile_xmd[" + mentionIdx + "][type]"] = "p";
+        mentionIdx++;
       }
     }
 

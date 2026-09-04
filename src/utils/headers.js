@@ -87,14 +87,22 @@ function getHeaders(url, options, ctx, customHeader, requestType = 'navigate') {
     if (isAndroid) {
         if (options && options.cachedAndroidUA) {
             userAgent = options.cachedAndroidUA;
+            secChUa = options.cachedSecChUa;
+            secChUaFullVersionList = options.cachedSecChUaFullVersionList;
+            secChUaPlatform = options.cachedSecChUaPlatform;
+            secChUaPlatformVersion = options.cachedSecChUaPlatformVersion;
             androidData = {
                 resolution: options.cachedAndroidResolution,
                 locale: options.cachedAndroidLocale,
                 device: options.cachedAndroidDevice
             };
         } else {
-            const generated = generateUserAgentByPersona('android', options);
+            const generated = generateUserAgentByPersona(persona, options);
             userAgent = generated.userAgent;
+            secChUa = generated.secChUa;
+            secChUaFullVersionList = generated.secChUaFullVersionList;
+            secChUaPlatform = generated.secChUaPlatform;
+            secChUaPlatformVersion = generated.secChUaPlatformVersion;
             androidData = {
                 resolution: generated.resolution,
                 locale: generated.locale,
@@ -124,19 +132,56 @@ function getHeaders(url, options, ctx, customHeader, requestType = 'navigate') {
     const locales = options?.cachedLocale || (androidData?.locale ? androidData.locale.replace('_', '-') : getRandomLocale());
 
     if (isAndroid) {
-        const headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Host': host,
-            'Connection': 'keep-alive',
-            'User-Agent': userAgent,
-            'Accept': '*/*',
-            'Accept-Language': locales,
-            'Accept-Encoding': 'gzip, deflate',
-            'X-FB-HTTP-Engine': 'Liger'
-        };
+        const isOrca = typeof userAgent === "string" && userAgent.includes("FBAN/Orca-Android");
 
-        if (androidData && androidData.resolution) {
-            headers['X-FB-Client-Density'] = String(androidData.resolution.density);
+        let headers;
+        if (isOrca) {
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Host': host,
+                'Connection': 'keep-alive',
+                'User-Agent': userAgent,
+                'Accept': '*/*',
+                'Accept-Language': locales,
+                'Accept-Encoding': 'gzip, deflate',
+                'X-FB-HTTP-Engine': 'Liger'
+            };
+
+            if (androidData && androidData.resolution) {
+                headers['X-FB-Client-Density'] = String(androidData.resolution.density);
+            }
+        } else {
+            // Modern Mobile Browser (Chrome Mobile)
+            const acceptHeader = isXhr
+                ? '*/*'
+                : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
+
+            headers = {
+                'Accept': acceptHeader,
+                'Accept-Language': locales,
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Host': host,
+                'Referer': referer,
+                'Sec-Ch-Ua': secChUa || '"Not A(Brand";v="99", "Chromium";v="133", "Google Chrome";v="133"',
+                'Sec-Ch-Ua-Mobile': '?1',
+                'Sec-Ch-Ua-Model': options?.cachedAndroidDevice?.model ? `"${options.cachedAndroidDevice.model}"` : '""',
+                'Sec-Ch-Ua-Platform': secChUaPlatform || '"Android"',
+                'Sec-Ch-Ua-Platform-Version': secChUaPlatformVersion || '"14.0.0"',
+                'Sec-Fetch-Dest': isXhr ? 'empty' : 'document',
+                'Sec-Fetch-Mode': isXhr ? 'cors' : 'navigate',
+                'Sec-Fetch-Site': isXhr ? 'same-origin' : 'none',
+                'User-Agent': userAgent,
+                'X-FB-HTTP-Engine': 'Liger'
+            };
+
+            if (!isXhr) {
+                headers['Upgrade-Insecure-Requests'] = '1';
+            } else {
+                headers['Origin'] = `https://${host}`;
+                headers['X-Requested-With'] = 'XMLHttpRequest';
+            }
         }
 
         if (ctx) {

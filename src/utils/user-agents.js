@@ -223,9 +223,105 @@ function randomOrcaUA() {
     };
 }
 
-function generateUserAgentByPersona(persona = 'desktop', options = {}) {
-    if (persona === 'android' || persona === 'mobile') {
-        if (options.cachedAndroidUA && options.cachedAndroidDevice) {
+const MOBILE_BROWSER_DATA = [
+    {
+        brand: "Google",
+        model: "Pixel 9 Pro",
+        androidVersion: "15",
+        chromeVersion: "133.0.6943.122",
+        platformVersion: '"15.0.0"',
+        resolution: { width: 1080, height: 2400, density: 3.0 }
+    },
+    {
+        brand: "Google",
+        model: "Pixel 8",
+        androidVersion: "14",
+        chromeVersion: "133.0.6943.122",
+        platformVersion: '"14.0.0"',
+        resolution: { width: 1080, height: 2400, density: 2.625 }
+    },
+    {
+        brand: "Samsung",
+        model: "SM-S928B",
+        androidVersion: "14",
+        chromeVersion: "132.0.6834.163",
+        platformVersion: '"14.0.0"',
+        resolution: { width: 1440, height: 3120, density: 3.5 }
+    },
+    {
+        brand: "Samsung",
+        model: "SM-S911B",
+        androidVersion: "14",
+        chromeVersion: "132.0.6834.163",
+        platformVersion: '"14.0.0"',
+        resolution: { width: 1080, height: 2340, density: 3.0 }
+    },
+    {
+        brand: "Xiaomi",
+        model: "23127PN0CG",
+        androidVersion: "14",
+        chromeVersion: "133.0.6943.122",
+        platformVersion: '"14.0.0"',
+        resolution: { width: 1200, height: 2670, density: 3.0 }
+    }
+];
+
+function randomMobileUserAgent() {
+    const preset = getRandom(MOBILE_BROWSER_DATA);
+    const majorVersion = preset.chromeVersion.split('.')[0];
+    const major = parseInt(majorVersion, 10);
+    const greaseStr = greaseForVersion(major);
+    const greaseVersion = "99";
+
+    const userAgent = `Mozilla/5.0 (Linux; Android ${preset.androidVersion}; ${preset.model}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${preset.chromeVersion} Mobile Safari/537.36`;
+
+    const brands = [
+        `"Not A(Brand";v="${greaseVersion}"`,
+        `"Chromium";v="${majorVersion}"`,
+        `"Google Chrome";v="${majorVersion}"`
+    ];
+
+    const secChUa = brands.join(', ');
+    const secChUaFullVersionList = brands.map(b => b.replace(`v="${majorVersion}"`, `v="${preset.chromeVersion}"`)).join(', ');
+
+    return {
+        userAgent,
+        secChUa,
+        secChUaFullVersionList,
+        secChUaPlatform: '"Android"',
+        secChUaPlatformVersion: preset.platformVersion,
+        secChUaMobile: '?1',
+        secChUaModel: `"${preset.model}"`,
+        browser: 'Google Chrome Mobile',
+        device: { brand: preset.brand, model: preset.model },
+        resolution: preset.resolution,
+        androidVersion: preset.androidVersion,
+        persona: 'mobile'
+    };
+}
+
+function generateUserAgentByPersona(persona = 'mobile', options = {}) {
+    if (persona === 'mobile') {
+        if (!options.randomUserAgent && options.cachedAndroidUA && options.cachedSecChUa) {
+            return {
+                userAgent: options.cachedAndroidUA,
+                secChUa: options.cachedSecChUa,
+                secChUaFullVersionList: options.cachedSecChUaFullVersionList,
+                secChUaPlatform: options.cachedSecChUaPlatform || '"Android"',
+                secChUaPlatformVersion: options.cachedSecChUaPlatformVersion || '"14.0.0"',
+                secChUaMobile: '?1',
+                browser: options.cachedBrowser || 'Google Chrome Mobile',
+                device: options.cachedAndroidDevice,
+                resolution: options.cachedAndroidResolution,
+                androidVersion: options.cachedAndroidVersion,
+                persona: 'mobile'
+            };
+        }
+        return randomMobileUserAgent();
+    }
+
+    if (persona === 'android') {
+        if (!options.randomUserAgent && options.cachedAndroidUA && options.cachedAndroidDevice) {
             return {
                 userAgent: options.cachedAndroidUA,
                 androidVersion: options.cachedAndroidVersion,
@@ -247,7 +343,7 @@ function generateUserAgentByPersona(persona = 'desktop', options = {}) {
         };
     }
 
-    if (options.cachedUserAgent && options.cachedSecChUa) {
+    if (!options.randomUserAgent && options.cachedUserAgent && options.cachedSecChUa) {
         return {
             userAgent: options.cachedUserAgent,
             secChUa: options.cachedSecChUa,
@@ -267,7 +363,7 @@ function generateUserAgentByPersona(persona = 'desktop', options = {}) {
 }
 
 function cachePersonaData(options, personaData) {
-    if (personaData.persona === 'android') {
+    if (personaData.persona === 'android' || personaData.persona === 'mobile') {
         options.cachedAndroidUA = personaData.userAgent;
         options.cachedAndroidVersion = personaData.androidVersion;
         options.cachedAndroidDevice = personaData.device;
@@ -277,6 +373,11 @@ function cachePersonaData(options, personaData) {
         options.cachedAndroidFbbv = personaData.fbbv;
         options.cachedAndroidLocale = personaData.locale;
         options.cachedAndroidCarrier = personaData.carrier;
+        options.cachedSecChUa = personaData.secChUa;
+        options.cachedSecChUaFullVersionList = personaData.secChUaFullVersionList;
+        options.cachedSecChUaPlatform = personaData.secChUaPlatform;
+        options.cachedSecChUaPlatformVersion = personaData.secChUaPlatformVersion;
+        options.cachedBrowser = personaData.browser;
     } else {
         options.cachedUserAgent = personaData.userAgent;
         options.cachedSecChUa = personaData.secChUa;
@@ -292,6 +393,7 @@ module.exports = {
     defaultUserAgent,
     windowsUserAgent: defaultUserAgent,
     randomUserAgent,
+    randomMobileUserAgent,
     randomBuildId,
     randomResolution,
     randomFbav,

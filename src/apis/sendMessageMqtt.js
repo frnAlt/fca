@@ -72,17 +72,37 @@ module.exports = (defaultFuncs, api, ctx) => {
     const ids = [], offsets = [], lengths = [], types = [];
     for (let i = 0; i < msg.mentions.length; i++) {
       const mention = msg.mentions[i];
-      let tag = String(mention.tag || "");
-      if (tag && !tag.startsWith("@")) tag = "@" + tag;
-      const fromIndex = Number.isInteger(mention.fromIndex) ? mention.fromIndex : 0;
-      let offset = baseBody.indexOf(tag, fromIndex);
-      if (offset === -1) offset = baseBody.indexOf(tag.slice(1), fromIndex);
-      if (offset < 0) offset = 0;
+      if (!mention) continue;
+      const rawTag = String(mention.tag || "");
+      const fromIndex = Number.isInteger(mention.fromIndex) && mention.fromIndex >= 0 ? mention.fromIndex : 0;
+
+      let matchedTag = "";
+      let offset = -1;
+
+      if (rawTag) {
+        offset = baseBody.indexOf(rawTag, fromIndex);
+        if (offset !== -1) {
+          matchedTag = rawTag;
+        } else if (rawTag.startsWith("@")) {
+          const stripped = rawTag.slice(1);
+          offset = baseBody.indexOf(stripped, fromIndex);
+          if (offset !== -1) matchedTag = stripped;
+        } else {
+          const prepended = "@" + rawTag;
+          offset = baseBody.indexOf(prepended, fromIndex);
+          if (offset !== -1) matchedTag = prepended;
+        }
+      }
+
+      // If tag is not found or empty, skip to prevent invalid offset from corrupting message
+      if (offset < 0 || !matchedTag) continue;
+
       ids.push(String(mention.id || 0));
       offsets.push(offset);
-      lengths.push(tag.length);
+      lengths.push(matchedTag.length);
       types.push("p");
     }
+    if (ids.length === 0) return null;
     return {
       mention_ids: ids.join(","),
       mention_offsets: offsets.join(","),
