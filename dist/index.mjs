@@ -23752,9 +23752,13 @@ var require_parse_delta = __commonJS({
                 })
               };
               defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form).then(parseAndCheckLogin3(ctx, defaultFuncs)).then((resData) => {
-                if (resData[resData.length - 1].error_results > 0) throw resData[0].o0.errors;
-                if (resData[resData.length - 1].successful_results === 0) throw { error: "forcedFetch: there was no successful_results", res: resData };
-                const fetchData = resData[0].o0.data.message;
+                const raw = Array.isArray(resData) ? (resData[0] || {}) : (resData || {});
+                const lastItem = Array.isArray(resData) ? resData[resData.length - 1] : raw;
+                if (lastItem && lastItem.error_results > 0) {
+                  const errors = raw.o0?.errors || raw.errors;
+                  if (errors) throw errors;
+                }
+                const fetchData = raw.o0?.data?.message || raw.data?.message || raw.message;
                 if (getType15(fetchData) === "Object") {
                   switch (fetchData.__typename) {
                     case "ThreadImageMessage":
@@ -24097,12 +24101,31 @@ function createGetSeqID(deps) {
         }
         throw { error: "Not logged in", originalResponse: resData };
       }
-      if (!Array.isArray(resData) || !resData.length) return;
-      const lastRes = resData[resData.length - 1];
-      if (lastRes && lastRes.successful_results === 0) return;
-      const syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
+      function extractSyncSequenceId(obj) {
+        if (!obj || typeof obj !== "object") return null;
+        if (Array.isArray(obj)) {
+          for (const item of obj) {
+            const found = extractSyncSequenceId(item);
+            if (found) return found;
+          }
+          return null;
+        }
+        if (obj.sync_sequence_id) return String(obj.sync_sequence_id);
+        if (obj.message_threads?.sync_sequence_id) return String(obj.message_threads.sync_sequence_id);
+        if (obj.viewer?.message_threads?.sync_sequence_id) return String(obj.viewer.message_threads.sync_sequence_id);
+        if (obj.data?.viewer?.message_threads?.sync_sequence_id) return String(obj.data.viewer.message_threads.sync_sequence_id);
+        if (obj.o0?.data?.viewer?.message_threads?.sync_sequence_id) return String(obj.o0.data.viewer.message_threads.sync_sequence_id);
+        for (const key of Object.keys(obj)) {
+          if (obj[key] && typeof obj[key] === "object") {
+            const nested = extractSyncSequenceId(obj[key]);
+            if (nested) return nested;
+          }
+        }
+        return null;
+      }
+      const syncSeqId = extractSyncSequenceId(resData);
       if (syncSeqId) {
-        ctx.lastSeqId = syncSeqId;
+        ctx.lastSeqId = String(syncSeqId);
         logger("mqtt getSeqID ok -> listenMqtt()", "info");
         listenMqtt2(defaultFuncs, api, ctx, globalCallback);
       } else {

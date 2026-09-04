@@ -1026,23 +1026,17 @@ function formatDeltaMessage(m) {
                                                     return lastHalf.substring(0, end);
                                             }
 
-                                            function makeParsable(html) {
-                                                const withoutForLoop = html.replace(/for\s*\(\s*;\s*;\s*\)\s*;\s*/, "");
+                                             function makeParsable(html) {
+                                                 if (typeof html !== "string") return html;
+                                                 const withoutForLoop = html.replace(/^\s*for\s*\(\s*;\s*;\s*\)\s*;\s*/i, "").trim();
+                                                 if (withoutForLoop.startsWith("[") && withoutForLoop.endsWith("]")) {
+                                                     return withoutForLoop;
+                                                 }
+                                                 const maybeMultipleObjects = withoutForLoop.split(/\}\s*\{/);
+                                                 if (maybeMultipleObjects.length === 1) return withoutForLoop;
 
-
-
-
-
-
-
-
-
-
-                                                const maybeMultipleObjects = withoutForLoop.split(/\}\r\n *\{/);
-                                                if (maybeMultipleObjects.length === 1) return maybeMultipleObjects;
-
-                                                return "[" + maybeMultipleObjects.join("},{") + "]";
-                                            }
+                                                 return "[" + maybeMultipleObjects.join("},{") + "]";
+                                             }
 
                                             function arrToForm(form) {
                                                 return arrayToObject(

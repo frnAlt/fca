@@ -194,9 +194,13 @@ function getFrom(str, startToken, endToken) {
 }
 
 function makeParsable(html) {
-  const withoutForLoop = html.replace(/^\s*for\s*\(;;\);\s*/i, "");
-  const maybeMultipleObjects = withoutForLoop.split(/\}\r\n *\{/);
-  if (maybeMultipleObjects.length === 1) return maybeMultipleObjects;
+  if (typeof html !== "string") return html;
+  const withoutForLoop = html.replace(/^\s*for\s*\(\s*;\s*;\s*\)\s*;\s*/i, "").trim();
+  if (withoutForLoop.startsWith("[") && withoutForLoop.endsWith("]")) {
+    return withoutForLoop;
+  }
+  const maybeMultipleObjects = withoutForLoop.split(/\}\s*\{/);
+  if (maybeMultipleObjects.length === 1) return withoutForLoop;
 
   return "[" + maybeMultipleObjects.join("},{") + "]";
 }

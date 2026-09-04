@@ -219,9 +219,13 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
         defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form)
           .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
           .then(resData => {
-            if (resData[resData.length - 1].error_results > 0) throw resData[0].o0.errors;
-            if (resData[resData.length - 1].successful_results === 0) throw { error: "forcedFetch: no successful_results" };
-            var fetchData = resData[0].o0.data.message;
+            const raw = Array.isArray(resData) ? (resData[0] || {}) : (resData || {});
+            const lastItem = Array.isArray(resData) ? resData[resData.length - 1] : raw;
+            if (lastItem && lastItem.error_results > 0) {
+              const errors = raw.o0?.errors || raw.errors;
+              if (errors) throw errors;
+            }
+            const fetchData = raw.o0?.data?.message || raw.data?.message || raw.message;
             if (utils.getType(fetchData) === "Object") {
               switch (fetchData.__typename) {
                 case "ThreadImageMessage": {

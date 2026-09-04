@@ -951,16 +951,38 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                 }
             }
             
-            let syncSeqId = null;
-            if (Array.isArray(resData) && resData.length > 0) {
-                syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
-            } else if (resData && typeof resData === "object") {
-                syncSeqId = resData.data?.viewer?.message_threads?.sync_sequence_id || resData.sync_sequence_id;
+            function extractSyncSequenceId(obj) {
+                if (!obj || typeof obj !== "object") return null;
+                if (Array.isArray(obj)) {
+                    for (const item of obj) {
+                        const found = extractSyncSequenceId(item);
+                        if (found) return found;
+                    }
+                    return null;
+                }
+                if (obj.sync_sequence_id) return String(obj.sync_sequence_id);
+                if (obj.message_threads?.sync_sequence_id) return String(obj.message_threads.sync_sequence_id);
+                if (obj.viewer?.message_threads?.sync_sequence_id) return String(obj.viewer.message_threads.sync_sequence_id);
+                if (obj.data?.viewer?.message_threads?.sync_sequence_id) return String(obj.data.viewer.message_threads.sync_sequence_id);
+                if (obj.o0?.data?.viewer?.message_threads?.sync_sequence_id) return String(obj.o0.data.viewer.message_threads.sync_sequence_id);
+                for (const key of Object.keys(obj)) {
+                    if (obj[key] && typeof obj[key] === "object") {
+                        const nested = extractSyncSequenceId(obj[key]);
+                        if (nested) return nested;
+                    }
+                }
+                return null;
             }
 
-            ctx.lastSeqId = syncSeqId || ctx.lastSeqId || "-1";
+            const syncSeqId = extractSyncSequenceId(resData);
+            if (syncSeqId) {
+                ctx.lastSeqId = String(syncSeqId);
+                utils.log("MQTT", `Obtained sequence ID: ${ctx.lastSeqId}`);
+            } else {
+                ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "-1";
+            }
         } catch (_) {
-            ctx.lastSeqId = ctx.lastSeqId || "-1";
+            ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "-1";
         }
     };
 
