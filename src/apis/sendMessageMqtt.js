@@ -175,10 +175,20 @@ module.exports = (defaultFuncs, api, ctx) => {
   function extractIdsFromPayload(payload) {
     let messageID = null;
     let threadID = null;
+    let failed = false;
+    let failureReason = null;
     function walk(n) {
       if (Array.isArray(n)) {
         if (n[0] === 5 && (n[1] === "replaceOptimsiticMessage" || n[1] === "replaceOptimisticMessage")) {
           messageID = String(n[3]);
+        }
+        if (n[0] === 5 && n[1] === "markOptimisticMessageFailed") {
+          failed = true;
+          failureReason = n[3] ? String(n[3]) : "Message failed to send";
+        }
+        if (n[0] === 5 && n[1] === "cutoverHandleInvalidSendToOpen") {
+          failed = true;
+          failureReason = n[5] ? String(n[5]) : "Cannot create open thread between users with default E2EE";
         }
         if (n[0] === 5 && n[1] === "writeCTAIdToThreadsTable") {
           const a = n[2];
@@ -188,7 +198,7 @@ module.exports = (defaultFuncs, api, ctx) => {
       }
     }
     walk(payload?.step);
-    return { threadID, messageID };
+    return { threadID, messageID, failed, failureReason };
   }
 
   function publishWithAck(content, reqID, callback, fallbackInfo = {}) {
@@ -235,8 +245,15 @@ module.exports = (defaultFuncs, api, ctx) => {
         }
         if (jsonMsg.request_id !== reqID) return;
         
-        const { threadID, messageID } = extractIdsFromPayload(jsonMsg.payload);
+        const { threadID, messageID, failed, failureReason } = extractIdsFromPayload(jsonMsg.payload);
         cleanup();
+        if (failed) {
+          const err = new Error(failureReason || "Message failed to send via MQTT LightSpeed");
+          err.code = "SEND_FAILED";
+          err.details = failureReason;
+          if (callback) callback(err);
+          return reject(err);
+        }
         const res = {
           messageID: messageID || fallbackInfo.messageID || fallbackInfo.otid,
           threadID: threadID || fallbackInfo.threadID

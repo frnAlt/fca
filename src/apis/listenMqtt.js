@@ -423,7 +423,7 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
             delta_batch_size: 200, 
             encoding: "JSON", 
             entity_fbid: ctx.userID,
-            initial_titan_sequence_id: ctx.lastSeqId,
+            initial_titan_sequence_id: (!ctx.lastSeqId || ctx.lastSeqId === "-1") ? "0" : String(ctx.lastSeqId),
             device_params: null
         };
 
@@ -989,12 +989,12 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
                     utils.warn("MQTT", `getSeqID HTML extraction failed: ${htmlErr?.message || htmlErr}`);
                 }
             }
-            if (!ctx.lastSeqId) {
-                ctx.lastSeqId = "-1";
+            if (!ctx.lastSeqId || ctx.lastSeqId === "-1") {
+                ctx.lastSeqId = "0";
             }
         } catch (err) {
             utils.warn("MQTT", `getSeqID caught unexpected error: ${err?.message || err}`);
-            ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "-1";
+            ctx.lastSeqId = ctx.lastSeqId && ctx.lastSeqId !== "-1" ? ctx.lastSeqId : "0";
         }
     };
 
@@ -1007,7 +1007,7 @@ module.exports = (defaultFuncs, api, ctx, opts) => {
         utils.log("MQTT", "Initializing message synchronization...");
         ctx._getSeqIDPromise = getSeqID(ctx._listenGeneration)
             .catch(() => {
-                ctx.lastSeqId = ctx.lastSeqId || "-1";
+                ctx.lastSeqId = (ctx.lastSeqId && ctx.lastSeqId !== "-1") ? ctx.lastSeqId : "0";
             })
             .then(() => { 
                 ctx._cycling = false;

@@ -215,17 +215,24 @@ function parseAndCheckLogin(ctx, http, retryCount = 0) {
 
     const ACCOUNT_ERROR_CODES = {
       1357001: "Account blocked - Facebook detected automated behavior",
-      1357004: "Account checkpoint required - Please verify your account on facebook.com",
       1357031: "Account temporarily locked - Too many login attempts",
       1357033: "Account suspended - Violation of terms of service",
       2056003: "Account restricted - Suspicious activity detected"
     };
 
+    if (res.error === 1357004) {
+      const err = new Error(res.errorDescription || "API refresh required (1357004)");
+      err.error = "api_refresh_required";
+      err.errorCode = 1357004;
+      err.isNotCritical = true;
+      throw err;
+    }
+
     if (res.error && ACCOUNT_ERROR_CODES[res.error]) {
       const err = new Error(ACCOUNT_ERROR_CODES[res.error]);
-      err.error = res.error === 1357004 ? "checkpoint_required" : "Account security issue";
+      err.error = "Account security issue";
       err.errorCode = res.error;
-      err.errorType = res.error === 1357004 ? "CHECKPOINT" : res.error === 1357031 ? "LOCKED" : "BLOCKED";
+      err.errorType = res.error === 1357031 ? "LOCKED" : "BLOCKED";
       err.requiresReLogin = res.error === 1357031;
       if ((!ctx || !ctx.loggedIn) && !ctx?._checkpointWarned) {
         if (ctx) ctx._checkpointWarned = true;

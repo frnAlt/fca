@@ -1191,12 +1191,12 @@ function formatDeltaMessage(m) {
                                                 }
                                             }
 
-                                            if (res.error === 1357001 || res.error === 1357004) {
-                                                const errMsg = res.error === 1357004 ? 'Account temporarily locked or blocked' : 'Facebook blocked the login';
+                                            if (res.error === 1357001) {
+                                                const errMsg = 'Facebook blocked the login';
                                                 const err = new Error(errMsg);
                                                 err.error = "Not logged in.";
                                                 err.requiresReLogin = true;
-                                                err.loginBlocked = res.error === 1357004;
+                                                err.loginBlocked = true;
                                                 throw err;
                                             }
 
