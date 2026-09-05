@@ -441,6 +441,9 @@ module.exports = (defaultFuncs, api, ctx) => {
         }
         callback(null, result);
       } catch (sendErr) {
+        if (global.systemMemoryDB) {
+          global.systemMemoryDB.recordError("SEND_MESSAGE", sendErr, { threadID });
+        }
         callback(sendErr);
       } finally {
         // Stop typing indicator regardless of success or failure.

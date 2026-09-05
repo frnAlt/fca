@@ -362,6 +362,9 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         if (!ctx._mqttConnected) {
             utils.log("MQTT connected successfully");
             ctx._mqttConnected = true;
+            if (global.systemMemoryDB) {
+                global.systemMemoryDB.updateSession({ mqttConnected: true, status: "online", botID: ctx.userID });
+            }
         }
         ctx._cycling = false;
         ctx._reconnectAttempts = 0;
@@ -553,6 +556,10 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
     mqttClient.on('close', guard("close", () => {
         if (ctx.mqttClient !== mqttClient) return;
         utils.warn("MQTT", "Connection closed");
+        if (global.systemMemoryDB) {
+            const currentDisconnects = (global.systemMemoryDB.data.currentSession.mqttDisconnects || 0) + 1;
+            global.systemMemoryDB.updateSession({ mqttConnected: false, mqttDisconnects: currentDisconnects });
+        }
         if (ctx._tmsTimeout) {
             clearTimeout(ctx._tmsTimeout);
             ctx._tmsTimeout = null;
