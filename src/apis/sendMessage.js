@@ -406,21 +406,36 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         isSingleUser = !isMultiRecipient && !(await isGroupThread(threadID, isGroup));
-        const preferMqtt = Boolean(mqttReady && !isMultiRecipient && !isSingleUser && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
+        const preferMqtt = Boolean(mqttReady && !isMultiRecipient && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
 
         let result;
         if (preferMqtt) {
           try {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
-            utils.warn("sendMessage", "MQTT send failed, attempting HTTP fallback:", mqttErr?.message || mqttErr);
-            try {
-              result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
-            } catch (httpErr) {
-              if (String(mqttErr?.message || "").includes("E2EE") || String(mqttErr?.message || "").includes("cutoverHandleInvalidSendToOpen")) {
-                throw new Error(`Direct thread ${threadID} is end-to-end encrypted (E2EE) by Facebook. Unencrypted bot API cannot message this 1-on-1 thread. Please use a group chat.`);
+            // For 1-on-1 direct messages or non-threaded threads, retry MQTT without reply metadata
+            if (replyToMessage) {
+              try {
+                result = await api.sendMessageMqtt(msg, threadID, undefined);
+              } catch (_) {}
+            }
+            if (!result) {
+              utils.warn("sendMessage", "MQTT send failed, attempting HTTP fallback:", mqttErr?.message || mqttErr);
+              try {
+                result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+              } catch (httpErr) {
+                if (replyToMessage) {
+                  try {
+                    result = await sendViaHttp(msg, threadID, undefined, isGroup);
+                  } catch (_) {}
+                }
+                if (!result) {
+                  if (String(mqttErr?.message || "").includes("E2EE") || String(mqttErr?.message || "").includes("cutoverHandleInvalidSendToOpen")) {
+                    throw new Error(`Direct thread ${threadID} is end-to-end encrypted (E2EE) by Facebook. Unencrypted bot API cannot message this 1-on-1 thread.`);
+                  }
+                  throw httpErr;
+                }
               }
-              throw httpErr;
             }
           }
         } else {
@@ -429,7 +444,14 @@ module.exports = (defaultFuncs, api, ctx) => {
           } catch (httpErr) {
             if (mqttReady && !isMultiRecipient && api.sendMessageMqtt) {
               utils.warn("sendMessage", "HTTP send failed, attempting MQTT fallback:", httpErr?.message || httpErr);
-              result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
+              try {
+                result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
+              } catch (mErr) {
+                if (replyToMessage) {
+                  try { result = await api.sendMessageMqtt(msg, threadID, undefined); } catch (_) {}
+                }
+                if (!result) throw mErr;
+              }
             } else {
               throw httpErr;
             }
@@ -447,28 +469,6 @@ module.exports = (defaultFuncs, api, ctx) => {
         }
         callback(null, result);
       } catch (sendErr) {
-        const errStr = String(sendErr?.message || sendErr || "");
-        if (isSingleUser && (errStr.includes("1545116") || errStr.includes("E2EE") || errStr.includes("cutover") || errStr.includes("1545041"))) {
-          const targetUID = String(Array.isArray(threadID) ? threadID[0] : threadID);
-          try {
-            let pMgr = global.privateThreadManager;
-            if (!pMgr) {
-              try { pMgr = require(require('path').join(process.cwd(), "func/privateThreadManager")); } catch (_) {}
-            }
-            if (pMgr) {
-              const uObj = (global.db?.allUserData || []).find(u => String(u.userID) === targetUID);
-              const uName = uObj?.name || "";
-              const privateTID = await pMgr.getOrCreatePrivateThread(api, targetUID, uName);
-              if (privateTID && String(privateTID) !== targetUID) {
-                utils.warn("sendMessage", `Routed E2EE-blocked message for user ${targetUID} to private unencrypted room ${privateTID}`);
-                const routedRes = await sendMessage(msg, privateTID, undefined, undefined, true);
-                return callback(null, routedRes);
-              }
-            }
-          } catch (routeErr) {
-            utils.error("sendMessage", `Failed to route to private thread for ${targetUID}:`, routeErr.message || routeErr);
-          }
-        }
         if (global.systemMemoryDB) {
           global.systemMemoryDB.recordError("SEND_MESSAGE", sendErr, { threadID });
         }
@@ -489,6 +489,12 @@ module.exports = (defaultFuncs, api, ctx) => {
   };
 
   api.sendMessageDM = (msg, userID, callback, replyToMessage) => {
+    return sendMessage(msg, userID, callback, replyToMessage, false);
+  };
+  api.sendMessageToUser = (msg, userID, callback, replyToMessage) => {
+    if (typeof msg === "string" && !isNaN(msg) && typeof userID === "string" && isNaN(userID)) {
+      return sendMessage(userID, msg, callback, replyToMessage, false);
+    }
     return sendMessage(msg, userID, callback, replyToMessage, false);
   };
   api.sendMessageGroup = (msg, threadID, callback, replyToMessage) => {
