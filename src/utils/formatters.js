@@ -46,19 +46,35 @@ function _formatAttachment(attachment1, attachment2) {
    }
 
     if (!attachment1.attach_type && attachment1.imageMetadata) {
+        const photoUrl = attachment1.url 
+            || attachment1.largePreviewUrl 
+            || attachment1.large_preview_url 
+            || attachment1.previewUrl 
+            || attachment1.preview_url 
+            || attachment1.thumbnailUrl 
+            || attachment1.thumbnail_url 
+            || attachment1.imageMetadata?.previewUrl 
+            || attachment1.imageMetadata?.largePreviewUrl 
+            || attachment1.imageMetadata?.url 
+            || attachment1.imageMetadata?.uri 
+            || attachment1.metadata?.url 
+            || null;
+        const prevUrl = attachment1.previewUrl || attachment1.preview_url || photoUrl;
+        const largePrevUrl = attachment1.largePreviewUrl || attachment1.large_preview_url || photoUrl;
+        const thumbUrl = attachment1.thumbnailUrl || attachment1.thumbnail_url || prevUrl;
         return {
             type: 'photo',
-            ID: attachment1.fbid,
-            filename: attachment1.filename,
+            ID: attachment1.fbid || attachment1.id || (attachment1.metadata && attachment1.metadata.fbid) || "",
+            filename: attachment1.filename || attachment1.fileName || "photo.jpg",
             fileSize: Number(attachment1.fileSize || 0),
-            mimeType: attachment1.mimeType,
-            width: attachment1.imageMetadata.width,
-            height: attachment1.imageMetadata.height,
-            url: null,
-            thumbnailUrl: null,
-            previewUrl: null,
-            largePreviewUrl: null,
-            name: attachment1.filename
+            mimeType: attachment1.mimeType || "image/jpeg",
+            width: attachment1.imageMetadata.width || 0,
+            height: attachment1.imageMetadata.height || 0,
+            url: photoUrl,
+            thumbnailUrl: thumbUrl,
+            previewUrl: prevUrl,
+            largePreviewUrl: largePrevUrl,
+            name: attachment1.filename || attachment1.fileName || "photo.jpg"
         };
     }
 
@@ -131,24 +147,36 @@ function _formatAttachment(attachment1, attachment2) {
                     name: attachment1.name
                 };
         case "photo":
+                    const pUrlFb = (attachment1.metadata && attachment1.metadata.url)
+                        || attachment1.url 
+                        || attachment1.largePreviewUrl 
+                        || attachment1.large_preview_url 
+                        || attachment1.previewUrl 
+                        || attachment1.preview_url 
+                        || attachment1.thumbnailUrl 
+                        || attachment1.thumbnail_url 
+                        || null;
+                    const prevFb = attachment1.preview_url || attachment1.previewUrl || pUrlFb;
+                    const largeFb = attachment1.large_preview_url || attachment1.largePreviewUrl || pUrlFb;
+                    const thumbFb = attachment1.thumbnail_url || attachment1.thumbnailUrl || prevFb;
                     return {
                         type: "photo",
-                        ID: attachment1.metadata.fbid.toString(),
-                        filename: attachment1.fileName,
+                        ID: (attachment1.metadata && attachment1.metadata.fbid ? attachment1.metadata.fbid.toString() : "") || (attachment1.fbid ? attachment1.fbid.toString() : "") || "",
+                        filename: attachment1.fileName || attachment1.filename || "",
                         fullFileName: fullFileName,
                         fileSize: fileSize,
                         original_extension: getExtension(attachment1.original_extension, fullFileName),
                         mimeType: mimeType,
-                        thumbnailUrl: attachment1.thumbnail_url,
-                        previewUrl: attachment1.preview_url,
-                        previewWidth: attachment1.preview_width,
-                        previewHeight: attachment1.preview_height,
-                        largePreviewUrl: attachment1.large_preview_url,
-                        largePreviewWidth: attachment1.large_preview_width,
-                        largePreviewHeight: attachment1.large_preview_height,
-                        url: attachment1.metadata.url,
-                        width: attachment1.metadata.dimensions.split(",")[0],
-                        height: attachment1.metadata.dimensions.split(",")[1],
+                        thumbnailUrl: thumbFb,
+                        previewUrl: prevFb,
+                        previewWidth: attachment1.preview_width || 0,
+                        previewHeight: attachment1.preview_height || 0,
+                        largePreviewUrl: largeFb,
+                        largePreviewWidth: attachment1.large_preview_width || 0,
+                        largePreviewHeight: attachment1.large_preview_height || 0,
+                        url: pUrlFb,
+                        width: (attachment1.metadata && attachment1.metadata.dimensions) ? attachment1.metadata.dimensions.split(",")[0] : "0",
+                        height: (attachment1.metadata && attachment1.metadata.dimensions) ? attachment1.metadata.dimensions.split(",")[1] : "0",
                         name: fullFileName
                     };
         case "animated_image":

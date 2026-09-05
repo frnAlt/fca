@@ -86,13 +86,17 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
             threadID: (delta.deltaMessageReply.message.messageMetadata.threadKey.threadFbId || delta.deltaMessageReply.message.messageMetadata.threadKey.otherUserFbId).toString(),
             messageID: delta.deltaMessageReply.message.messageMetadata.messageId,
             senderID: delta.deltaMessageReply.message.messageMetadata.actorFbId.toString(),
-            attachments: delta.deltaMessageReply.message.attachments.map(att => {
+            attachments: (delta.deltaMessageReply.message.attachments || []).map(att => {
+              if (att && att.mercuryJSON && typeof att.mercuryJSON === "string") {
+                try {
+                  var mercury = JSON.parse(att.mercuryJSON);
+                  Object.assign(att, mercury);
+                } catch (_) {}
+              }
               try {
-                var mercury = JSON.parse(att.mercuryJSON);
-                Object.assign(att, mercury);
                 return utils._formatAttachment(att);
               } catch (ex) {
-                return { ...att, error: ex, type: "unknown" };
+                return { ...att, url: att?.url || att?.preview_url || att?.large_preview_url || null, error: ex, type: "unknown" };
               }
             }),
             body: (delta.deltaMessageReply.message.body || ""),
@@ -112,14 +116,18 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               threadID: (delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId || delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.otherUserFbId).toString(),
               messageID: delta.deltaMessageReply.repliedToMessage.messageMetadata.messageId,
               senderID: delta.deltaMessageReply.repliedToMessage.messageMetadata.actorFbId.toString(),
-              attachments: delta.deltaMessageReply.repliedToMessage.attachments.map(att => {
+              attachments: (delta.deltaMessageReply.repliedToMessage.attachments || []).map(att => {
+                 if (att && att.mercuryJSON && typeof att.mercuryJSON === "string") {
+                   try {
+                     var mercury = JSON.parse(att.mercuryJSON);
+                     Object.assign(att, mercury);
+                   } catch (_) {}
+                 }
                  try {
-                    var mercury = JSON.parse(att.mercuryJSON);
-                    Object.assign(att, mercury);
-                    return utils._formatAttachment(att);
-                  } catch (ex) {
-                    return { ...att, error: ex, type: "unknown" };
-                  }
+                   return utils._formatAttachment(att);
+                 } catch (ex) {
+                   return { ...att, url: att?.url || att?.preview_url || att?.large_preview_url || null, error: ex, type: "unknown" };
+                 }
               }),
               body: delta.deltaMessageReply.repliedToMessage.body || "",
               isGroup: !!delta.deltaMessageReply.repliedToMessage.messageMetadata.threadKey.threadFbId,
