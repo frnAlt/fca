@@ -399,8 +399,8 @@ module.exports = (defaultFuncs, api, ctx) => {
 
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
-        const isMultiRecipient = Array.isArray(threadID);
-        const preferMqtt = Boolean(mqttReady && !isMultiRecipient && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
+        const isSingleUser = !(await isGroupThread(threadID, isGroup));
+        const preferMqtt = Boolean(mqttReady && !isMultiRecipient && !isSingleUser && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
 
         let result;
         if (preferMqtt) {
@@ -408,7 +408,14 @@ module.exports = (defaultFuncs, api, ctx) => {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
             utils.warn("sendMessage", "MQTT send failed, attempting HTTP fallback:", mqttErr?.message || mqttErr);
-            result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+            try {
+              result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
+            } catch (httpErr) {
+              if (String(mqttErr?.message || "").includes("E2EE") || String(mqttErr?.message || "").includes("cutoverHandleInvalidSendToOpen")) {
+                throw new Error(`Direct thread ${threadID} is end-to-end encrypted (E2EE) by Facebook. Unencrypted bot API cannot message this 1-on-1 thread. Please use a group chat.`);
+              }
+              throw httpErr;
+            }
           }
         } else {
           try {

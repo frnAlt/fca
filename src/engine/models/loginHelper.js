@@ -321,8 +321,10 @@ async function loginHelper(credentials, globalOptions, callback, setOptionsFunc,
             const { backupAppStateSQL } = require('../../database/appStateBackup');
             await backupAppStateSQL(jar, ctx.userID);
         } catch (backupErr) {
-            const msg = (backupErr?.message || "").split("\n")[0];
-            utils.warn("Failed to backup AppState to database (optional):", msg);
+            if (globalOptions?.debug) {
+                const msg = (backupErr?.message || "").split("\n")[0];
+                utils.log("FCA", `AppState backup skipped (optional): ${msg}`);
+            }
         }
         api.message = new Map();
         api.timestamp = {};
@@ -396,8 +398,10 @@ async function loginHelper(credentials, globalOptions, callback, setOptionsFunc,
             api.userData = userDataModule(api);
             utils.log("Database methods initialized");
         } catch (dbError) {
-            const msg = (dbError?.message || "").split("\n")[0];
-            utils.warn("Database initialization skipped (optional feature):", msg);
+            if (globalOptions?.debug) {
+                const msg = (dbError?.message || "").split("\n")[0];
+                utils.log("FCA", `Database initialization skipped (optional feature): ${msg}`);
+            }
         }
 
         api.ctx = ctx;
