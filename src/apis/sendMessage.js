@@ -380,10 +380,10 @@ module.exports = (defaultFuncs, api, ctx) => {
       return callback(new Error("Dissallowed props: `" + disallowedProperties.join(", ") + "`"));
     }
 
-    // Declare typing state here so the finally block never hits a ReferenceError
-    // in strict mode. These are set below if simulateTyping is enabled.
+    // Declare typing state and thread context here so the finally and catch blocks never hit a ReferenceError
     let typingTimeout = null;
     let typingStarted = false;
+    let isSingleUser = false;
 
     try {
       // Simulate human typing delay when the option is enabled and there is
@@ -405,7 +405,7 @@ module.exports = (defaultFuncs, api, ctx) => {
 
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
-        const isSingleUser = !isMultiRecipient && !(await isGroupThread(threadID, isGroup));
+        isSingleUser = !isMultiRecipient && !(await isGroupThread(threadID, isGroup));
         const preferMqtt = Boolean(mqttReady && !isMultiRecipient && !isSingleUser && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
 
         let result;
@@ -447,6 +447,28 @@ module.exports = (defaultFuncs, api, ctx) => {
         }
         callback(null, result);
       } catch (sendErr) {
+        const errStr = String(sendErr?.message || sendErr || "");
+        if (isSingleUser && (errStr.includes("1545116") || errStr.includes("E2EE") || errStr.includes("cutover") || errStr.includes("1545041"))) {
+          const targetUID = String(Array.isArray(threadID) ? threadID[0] : threadID);
+          try {
+            let pMgr = global.privateThreadManager;
+            if (!pMgr) {
+              try { pMgr = require(require('path').join(process.cwd(), "func/privateThreadManager")); } catch (_) {}
+            }
+            if (pMgr) {
+              const uObj = (global.db?.allUserData || []).find(u => String(u.userID) === targetUID);
+              const uName = uObj?.name || "";
+              const privateTID = await pMgr.getOrCreatePrivateThread(api, targetUID, uName);
+              if (privateTID && String(privateTID) !== targetUID) {
+                utils.warn("sendMessage", `Routed E2EE-blocked message for user ${targetUID} to private unencrypted room ${privateTID}`);
+                const routedRes = await sendMessage(msg, privateTID, undefined, undefined, true);
+                return callback(null, routedRes);
+              }
+            }
+          } catch (routeErr) {
+            utils.error("sendMessage", `Failed to route to private thread for ${targetUID}:`, routeErr.message || routeErr);
+          }
+        }
         if (global.systemMemoryDB) {
           global.systemMemoryDB.recordError("SEND_MESSAGE", sendErr, { threadID });
         }

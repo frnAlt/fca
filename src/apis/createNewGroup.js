@@ -36,8 +36,8 @@ module.exports = (defaultFuncs, api, ctx) => {
         throw new Error("createNewGroup: participantIDs should be an array.");
       }
 
-      if (participantIDs.length < 2) {
-        throw new Error("createNewGroup: participantIDs should have at least 2 IDs.");
+      if (participantIDs.length < 1) {
+        throw new Error("createNewGroup: participantIDs should have at least 1 ID.");
       }
 
       const pids = [];
