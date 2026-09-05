@@ -53,14 +53,9 @@ function formatThreadGraphQLResponse(data) {
     throw error;
   }
   
-  const messageThread = data.message_thread;
+  const messageThread = data?.message_thread;
   if (!messageThread) {
-    const error = new Error("No message_thread in GraphQL response - thread may not exist or access may be restricted");
-    Object.assign(error, {
-      details: "The GraphQL query returned successfully but contained no message_thread data"
-    });
-    utils.error("formatThreadGraphQLResponse", error);
-    throw error;
+    return null;
   }
 
   const threadID = messageThread.thread_key.thread_fbid
@@ -319,6 +314,9 @@ module.exports = function (defaultFuncs, api, ctx) {
             const threadInfo = formatThreadGraphQLResponse(responseData.data);
             if (threadInfo) {
                 threadInfos[threadInfo.threadID || threadIDs[i]] = threadInfo;
+            } else {
+                const fb = makeFallback([threadIDs[i]]);
+                threadInfos[threadIDs[i]] = (fb && fb[threadIDs[i]]) ? fb[threadIDs[i]] : fb;
             }
         }
 
