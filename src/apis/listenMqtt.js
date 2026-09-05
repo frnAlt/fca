@@ -256,7 +256,16 @@ async function listenMqtt(defaultFuncs, api, ctx, globalCallback, scheduleReconn
         if (ctx.mqttClient === mqttClient) ctx._lastMqttActivityAt = Date.now();
     };
     mqttClient.on("packetsend", markMqttActivity);
-    mqttClient.on("packetreceive", markMqttActivity);
+    mqttClient.on("packetreceive", (packet) => {
+        markMqttActivity();
+        if (ctx.globalOptions?.debug || process.env.DEBUG) {
+            if (packet.cmd === "publish") {
+                utils.log("MQTT_PACKET", `Topic: ${packet.topic} | Payload: ${packet.payload?.toString()?.slice(0, 300)}`);
+            } else {
+                utils.log("MQTT_PACKET", `Cmd: ${packet.cmd}`);
+            }
+        }
+    });
 
     const requestClientReconnect = (delayMs, reason) => {
         if (ctx._ending || ctx._cycling || !ctx.globalOptions.autoReconnect) return false;

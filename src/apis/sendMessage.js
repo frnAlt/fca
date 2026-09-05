@@ -275,8 +275,11 @@ module.exports = (defaultFuncs, api, ctx) => {
         cache[threadID.toString()] = isSingleUser;
         return sendViaHttp(msg, threadID, replyToMessage, isSingleUser, true);
       }
-      if (resData.error !== 1545012 && resData.error !== 1545003 && resData.error !== 1357004) {
+      if (resData.error !== 1545012 && resData.error !== 1545003 && resData.error !== 1357004 && resData.error !== 1545116) {
         antiSuspension.detectSuspensionSignal(String(resData.error) + ' ' + JSON.stringify(resData));
+      }
+      if (resData.error === 1545116) {
+        throw new Error(`Direct thread ${threadID} is end-to-end encrypted (E2EE) by Facebook. Unencrypted bot API cannot message this 1-on-1 thread. Please use a group chat.`);
       }
       throw new Error(JSON.stringify(resData));
     }
