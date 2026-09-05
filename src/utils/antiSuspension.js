@@ -95,9 +95,9 @@ class AntiSuspension {
         this.suspensionCircuitBreaker = {
             tripped: false,
             trippedAt: null,
-            cooldownMs: 45 * 60 * 1000,
+            cooldownMs: 5 * 60 * 1000,
             signalCount: 0,
-            maxSignalsBeforeTrip: 4,
+            maxSignalsBeforeTrip: 6,
             lastSignalAt: null
         };
 
@@ -228,16 +228,20 @@ class AntiSuspension {
 
     _onSuspensionSignalDetected() {
         const cb = this.suspensionCircuitBreaker;
+        const now = Date.now();
+        if (cb.lastSignalAt && now - cb.lastSignalAt > 120000) {
+            cb.signalCount = 0;
+        }
         cb.signalCount++;
-        cb.lastSignalAt = Date.now();
+        cb.lastSignalAt = now;
 
         if (cb.signalCount >= cb.maxSignalsBeforeTrip) {
             if (!cb.tripped) {
                 cb.tripped = true;
-                cb.trippedAt = Date.now();
+                cb.trippedAt = now;
                 const { utils } = this._getUtils();
                 utils && utils.warn && utils.warn("AntiSuspension",
-                    `Circuit breaker TRIPPED after ${cb.signalCount} suspension signals. ` +
+                    `Circuit breaker TRIPPED after ${cb.signalCount} suspension signals within 2 minutes. ` +
                     `Pausing all activity for ${cb.cooldownMs / 60000} minutes.`);
             }
         }
@@ -336,10 +340,6 @@ class AntiSuspension {
         }
 
         this._incrementDailyStats(threadID);
-        if (text && this.detectSuspensionSignal(String(text))) {
-            throw new Error('Suspicious message content detected.');
-        }
-
         await this.addSmartDelay();
         return {
             threadID: String(threadID),

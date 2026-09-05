@@ -275,7 +275,9 @@ module.exports = (defaultFuncs, api, ctx) => {
         cache[threadID.toString()] = isSingleUser;
         return sendViaHttp(msg, threadID, replyToMessage, isSingleUser, true);
       }
-      antiSuspension.detectSuspensionSignal(String(resData.error) + ' ' + JSON.stringify(resData));
+      if (resData.error !== 1545012 && resData.error !== 1545003 && resData.error !== 1357004) {
+        antiSuspension.detectSuspensionSignal(String(resData.error) + ' ' + JSON.stringify(resData));
+      }
       throw new Error(JSON.stringify(resData));
     }
     const messageInfo = resData.payload.actions.reduce((p, v) => {
@@ -395,13 +397,14 @@ module.exports = (defaultFuncs, api, ctx) => {
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
         const isMultiRecipient = Array.isArray(threadID);
-        const preferMqtt = Boolean(ctx.globalOptions?.preferMqttSend && mqttReady && !isMultiRecipient && api.sendMessageMqtt);
+        const preferMqtt = Boolean(mqttReady && !isMultiRecipient && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
 
         let result;
         if (preferMqtt) {
           try {
             result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
           } catch (mqttErr) {
+            utils.warn("sendMessage", "MQTT send failed, attempting HTTP fallback:", mqttErr?.message || mqttErr);
             result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
           }
         } else {
@@ -409,6 +412,7 @@ module.exports = (defaultFuncs, api, ctx) => {
             result = await sendViaHttp(msg, threadID, replyToMessage, isGroup);
           } catch (httpErr) {
             if (mqttReady && !isMultiRecipient && api.sendMessageMqtt) {
+              utils.warn("sendMessage", "HTTP send failed, attempting MQTT fallback:", httpErr?.message || httpErr);
               result = await api.sendMessageMqtt(msg, threadID, replyToMessage);
             } else {
               throw httpErr;

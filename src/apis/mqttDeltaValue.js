@@ -25,7 +25,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
             if (ctx.globalOptions.autoMarkDelivery) {
                 api.markAsDelivered(fmtMsg.threadID, fmtMsg.messageID);
             }
-            if (!ctx.globalOptions.selfListen && fmtMsg.senderID === ctx.userID) {
+            if (!ctx.globalOptions.selfListen && String(fmtMsg.senderID) === String(ctx.userID || ctx.i_userID)) {
                 return;
             }
             return globalCallback(null, fmtMsg);
@@ -60,7 +60,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
               userID: delta.deltaMessageReaction.userId.toString()
             };
 
-            if (!ctx.globalOptions.selfListen && reactionEvent.senderID === ctx.userID) {
+            if (!ctx.globalOptions.selfListen && String(reactionEvent.senderID) === String(ctx.userID || ctx.i_userID)) {
               return;
             }
 
@@ -133,7 +133,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
             ctx.threadTypeCache[callbackToReturn.threadID.toString()] = callbackToReturn.isGroup;
           }
           if (ctx.globalOptions.autoMarkDelivery) api.markAsDelivered(callbackToReturn.threadID, callbackToReturn.messageID);
-          if (!ctx.globalOptions.selfListen && callbackToReturn.senderID === ctx.userID) return;
+          if (!ctx.globalOptions.selfListen && String(callbackToReturn.senderID) === String(ctx.userID || ctx.i_userID)) return;
           return globalCallback(null, callbackToReturn);
         }
       }
@@ -193,7 +193,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
       } catch (err) {
         return;
       }
-      if (!ctx.globalOptions.selfListenEvent && fmtEvent2 && fmtEvent2.author && fmtEvent2.author.toString() === ctx.userID) return;
+      if (!ctx.globalOptions.selfListenEvent && fmtEvent2 && fmtEvent2.author && String(fmtEvent2.author) === String(ctx.userID || ctx.i_userID)) return;
       if (!ctx.loggedIn) return;
       if (fmtEvent2) globalCallback(null, fmtEvent2);
       break;

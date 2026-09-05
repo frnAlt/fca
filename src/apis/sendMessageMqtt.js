@@ -191,11 +191,10 @@ module.exports = (defaultFuncs, api, ctx) => {
     return { threadID, messageID };
   }
 
-  function publishWithAck(content, reqID, callback) {
+  function publishWithAck(content, reqID, callback, fallbackInfo = {}) {
     return new Promise((resolve, reject) => {
-      if (!ctx.mqttClient || typeof ctx.mqttClient.on !== "function" || typeof ctx.mqttClient.publish !== "function") {
-        const err = new Error("MQTT client is not initialized");
-        utils.error("sendMessageMqtt", err);
+      if (!ctx.mqttClient || !ctx.mqttClient.connected) {
+        const err = new Error("MQTT client is not connected.");
         if (callback) callback(err);
         return reject(err);
       }
@@ -206,6 +205,7 @@ module.exports = (defaultFuncs, api, ctx) => {
 
       let done = false;
       let responseTimeout = null;
+      let publishSucceeded = false;
       
       const cleanup = () => {
         if (done) return;
@@ -237,8 +237,12 @@ module.exports = (defaultFuncs, api, ctx) => {
         
         const { threadID, messageID } = extractIdsFromPayload(jsonMsg.payload);
         cleanup();
-        if (callback) callback(undefined, { messageID, threadID });
-        resolve({ messageID, threadID });
+        const res = {
+          messageID: messageID || fallbackInfo.messageID || fallbackInfo.otid,
+          threadID: threadID || fallbackInfo.threadID
+        };
+        if (callback) callback(undefined, res);
+        resolve(res);
       };
       
       ctx.mqttClient.on("message", handleRes);
@@ -250,14 +254,25 @@ module.exports = (defaultFuncs, api, ctx) => {
             if (callback) callback(err);
             return reject(err);
           }
+        } else {
+          publishSucceeded = true;
         }
       });
       
-      // Fallback safety timeout if MQTT write hangs
-      const ackTimeoutMs = (ctx.globalOptions && ctx.globalOptions.mqttSendTimeoutMs) || 3000;
+      // Fallback safety timeout: if MQTT broker acknowledged publish, resolve optimistically
+      const ackTimeoutMs = (ctx.globalOptions && ctx.globalOptions.mqttSendTimeoutMs) || 6000;
       responseTimeout = setTimeout(() => {
         if (done) return;
         cleanup();
+        if (publishSucceeded) {
+          const fallbackRes = {
+            messageID: fallbackInfo.messageID || fallbackInfo.otid,
+            threadID: fallbackInfo.threadID,
+            optimistic: true
+          };
+          if (callback) callback(undefined, fallbackRes);
+          return resolve(fallbackRes);
+        }
         const err = { error: "Timeout waiting for ACK (" + ackTimeoutMs + "ms)" };
         if (callback) callback(err);
         reject(err);
@@ -366,6 +381,6 @@ module.exports = (defaultFuncs, api, ctx) => {
     });
     form.payload = JSON.stringify(form.payload);
 
-    return publishWithAck(form, request_id, callback);
+    return publishWithAck(form, request_id, callback, { messageID: otid, threadID: threadID.toString(), otid });
   };
 };

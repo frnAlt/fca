@@ -32,6 +32,7 @@ async function setOptions(globalOptions, options = {}) {
         },
         autoReconnect: (value) => (globalOptions.autoReconnect = Boolean(value)),
         autoListen: (value) => (globalOptions.autoListen = Boolean(value)),
+        preferMqttSend: (value) => (globalOptions.preferMqttSend = Boolean(value)),
         mqttCycleMs(value) {
             if (typeof value === 'number' && value > 0) globalOptions.mqttCycleMs = Math.floor(value);
         },
