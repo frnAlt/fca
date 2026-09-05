@@ -3,7 +3,11 @@
 const utils = require('../utils');
 
 module.exports = function (defaultFuncs, api, ctx) {
-  return function unsendMessage(messageID, callback) {
+  return function unsendMessage(messageID, threadID, callback) {
+    if (typeof threadID === 'function') {
+      callback = threadID;
+      threadID = null;
+    }
     let resolveFunc = () => {};
     let rejectFunc = () => {};
     const returnPromise = new Promise((resolve, reject) => {
@@ -34,6 +38,12 @@ module.exports = function (defaultFuncs, api, ctx) {
         const requestId = ++ctx.wsReqNumber;
         const taskId = ++ctx.wsTaskNumber;
 
+        const taskPayload = { message_id: messageID };
+        if (threadID) {
+          taskPayload.thread_key = String(threadID);
+          taskPayload.sync_group = 1;
+        }
+
         const content = {
           app_id: String(ctx.appID || ctx.mqttAppID || "2220391788200892"),
           payload: JSON.stringify({
@@ -43,7 +53,7 @@ module.exports = function (defaultFuncs, api, ctx) {
               {
                 failure_count: null,
                 label: "33",
-                payload: JSON.stringify({ message_id: messageID }),
+                payload: JSON.stringify(taskPayload),
                 queue_name: "unsend_message",
                 task_id: taskId
               }
@@ -69,7 +79,7 @@ module.exports = function (defaultFuncs, api, ctx) {
       })
       .catch((err) => {
         utils.error("unsendMessage (HTTP)", err);
-        // If MQTT client is connected, unsend may still have gone through
+        // If MQTT client is connected, HTTP may fail for modern threads but MQTT succeeds
         if (ctx.mqttClient && ctx.mqttClient.connected) {
           return callback(null, { success: true, messageID });
         }

@@ -18192,13 +18192,17 @@ function extractUnsendMessageResponse(message) {
 function createUnsendMessageCommand(deps) {
   const { ctx, generateOfflineThreadingID: generateOfflineThreadingID2, logError: logError2 } = deps;
   return function unsendMessage(messageID, threadID, callback) {
+    if (typeof threadID === "function") {
+      callback = threadID;
+      threadID = undefined;
+    }
     const { callback: cb, promise } = createLegacyPromise(callback, {
       success: true
     });
     try {
       assertMqttCapability(ctx);
-      if (!messageID || threadID === null || typeof threadID === "undefined" || threadID === "") {
-        throw new Error("messageID and threadID are required");
+      if (!messageID) {
+        throw new Error("messageID is required");
       }
       if (typeof ctx.wsReqNumber !== "number") {
         ctx.wsReqNumber = 0;
@@ -18208,6 +18212,11 @@ function createUnsendMessageCommand(deps) {
       }
       const requestId = ++ctx.wsReqNumber;
       const taskId = ++ctx.wsTaskNumber;
+      const taskPayload = { message_id: messageID };
+      if (threadID) {
+        taskPayload.thread_key = String(threadID);
+        taskPayload.sync_group = 1;
+      }
       publishLsRequestWithAck({
         client: ctx.mqttClient,
         requestId,
@@ -18218,11 +18227,7 @@ function createUnsendMessageCommand(deps) {
               {
                 failure_count: null,
                 label: "33",
-                payload: JSON.stringify({
-                  message_id: messageID,
-                  thread_key: threadID,
-                  sync_group: 1
-                }),
+                payload: JSON.stringify(taskPayload),
                 queue_name: "unsend_message",
                 task_id: taskId
               }
@@ -23628,7 +23633,7 @@ var require_parse_delta = __commonJS({
                     }
                   } else if (d.deltaMessageReply.replyToMessageId) {
                     return defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, {
-                      av: ctx.globalOptions.pageID,
+                      av: ctx.globalOptions.pageID || ctx.userID || ctx.i_userID,
                       queries: JSON.stringify({
                         o0: {
                           doc_id: "2848441488556444",
@@ -23739,7 +23744,7 @@ var require_parse_delta = __commonJS({
             const tid = delta.threadKey.threadFbId || delta.threadKey.otherUserFbId;
             if (mid && tid) {
               const form = {
-                av: ctx.globalOptions.pageID,
+                av: ctx.globalOptions.pageID || ctx.userID || ctx.i_userID,
                 queries: JSON.stringify({
                   o0: {
                     doc_id: "2848441488556444",

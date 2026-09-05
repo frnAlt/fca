@@ -203,7 +203,7 @@ function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
       var tid = v.delta.threadKey.threadFbId || v.delta.threadKey.otherUserFbId;
       if (mid && tid) {
         var form = {
-          av: ctx.globalOptions.pageID || ctx.userID,
+          av: ctx.globalOptions.pageID || ctx.userID || ctx.i_userID,
           queries: JSON.stringify({
             o0: {
               doc_id: "2848441488556444",
