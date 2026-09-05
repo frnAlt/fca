@@ -283,13 +283,18 @@ module.exports = (defaultFuncs, api, ctx) => {
       }
       throw new Error(JSON.stringify(resData));
     }
-    const messageInfo = resData.payload.actions.reduce((p, v) => {
+    const actions = Array.isArray(resData?.payload?.actions) ? resData.payload.actions : [];
+    const messageInfo = actions.reduce((p, v) => {
       return {
         threadID:  v.thread_fbid  || (p && p.threadID),
         messageID: v.message_id   || (p && p.messageID),
         timestamp: v.timestamp    || (p && p.timestamp),
       };
-    }, null);
+    }, null) || {
+      threadID: Array.isArray(threadID) ? threadID[0] : String(threadID),
+      messageID: resData?.payload?.message_id || resData?.payload?.mid || messageAndOTID,
+      timestamp: Date.now()
+    };
     return messageInfo;
   }
 
@@ -366,6 +371,7 @@ module.exports = (defaultFuncs, api, ctx) => {
     if (ctx.validator && !ctx.validator.validateIDArray(threadIDs, ctx.validator.isValidThreadID)) {
       return callback(new Error("Invalid thread ID(s)"));
     }
+    const isMultiRecipient = Array.isArray(threadID) || threadIDType === "Array";
 
     if (msgType === "String") msg = { body: msg };
 
@@ -399,7 +405,7 @@ module.exports = (defaultFuncs, api, ctx) => {
 
       try {
         const mqttReady = ctx.mqttClient && ctx.mqttClient.connected;
-        const isSingleUser = !(await isGroupThread(threadID, isGroup));
+        const isSingleUser = !isMultiRecipient && !(await isGroupThread(threadID, isGroup));
         const preferMqtt = Boolean(mqttReady && !isMultiRecipient && !isSingleUser && api.sendMessageMqtt && ctx.globalOptions?.preferMqttSend !== false);
 
         let result;
