@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/fca-native-banner.svg" alt="FCA Native Banner" width="100%" />
+</p>
+
 # @floppa/fca-native
 
 Native **Floppa-Chatbot Facebook Chat API Engine** — High performance, modern 24/7 Messenger API with advanced session stability, adaptive rate limiting, circuit breakers, and self-healing resilience.

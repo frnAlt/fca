@@ -1,0 +1,141 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">FCA Native</title>
+  <desc id="desc">Animated gradient banner for Floppa @floppa/fca-native Messenger Engine.</desc>
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="background" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#070914"/>
+      <stop offset="0.48" stop-color="#0f112e"/>
+      <stop offset="1" stop-color="#061826"/>
+    </linearGradient>
+
+    <!-- Accent Gradient -->
+    <linearGradient id="accent" x1="100" y1="90" x2="900" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="0.45" stop-color="#818CF8"/>
+      <stop offset="0.75" stop-color="#C084FC"/>
+      <stop offset="1" stop-color="#00F2FE"/>
+    </linearGradient>
+
+    <!-- Cyan to Purple Glow -->
+    <linearGradient id="cyanPurple" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#00F2FE"/>
+      <stop offset="1" stop-color="#9333EA"/>
+    </linearGradient>
+
+    <!-- Radial Glows -->
+    <radialGradient id="glowPurple">
+      <stop stop-color="#7C3AED" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan">
+      <stop stop-color="#06B6D4" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Filters -->
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="35"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Grid Pattern -->
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" stroke="#FFFFFF" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="420" rx="28" fill="url(#background)"/>
+  <rect width="1200" height="420" rx="28" fill="url(#grid)"/>
+
+  <!-- Glowing Orbs -->
+  <circle cx="160" cy="80" r="220" fill="url(#glowPurple)" filter="url(#blur)">
+    <animate attributeName="cx" values="160;250;160" dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="80;140;80" dur="10s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="1040" cy="340" r="240" fill="url(#glowCyan)" filter="url(#blur)">
+    <animate attributeName="cx" values="1040;930;1040" dur="12s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="340;270;340" dur="12s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Cybernetic Wave Connections -->
+  <g opacity="0.8">
+    <path d="M70 330C230 260 270 375 430 305C590 235 630 340 770 280C910 220 970 310 1130 220" stroke="url(#accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="8 14">
+      <animate attributeName="stroke-dashoffset" from="0" to="-220" dur="8s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="430" cy="305" r="5" fill="#38BDF8">
+      <animate attributeName="r" values="4;8;4" dur="2.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.4;1" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="770" cy="280" r="5" fill="#00F2FE">
+      <animate attributeName="r" values="4;8;4" dur="2.3s" begin="0.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.4;1" dur="2.3s" begin="0.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Logo Mark Container -->
+  <g filter="url(#shadow)">
+    <!-- Logo Badge Backdrop -->
+    <rect x="86" y="80" width="88" height="88" rx="24" fill="#FFFFFF" fill-opacity="0.06" stroke="url(#accent)" stroke-width="1.8"/>
+    
+    <!-- Messenger Chat Bubble with Lightning Bolt (FCA Core Symbol) -->
+    <g transform="translate(98, 92)" filter="url(#logoGlow)">
+      <!-- Speech bubble outline -->
+      <path d="M32 4C16.536 4 4 15.64 4 30C4 37.8 7.48 44.78 13.08 49.52L11 60L21.94 54.02C25.08 55.3 28.46 56 32 56C47.464 56 60 44.36 60 30C60 15.64 47.464 4 32 4Z" fill="url(#cyanPurple)" fill-opacity="0.2" stroke="url(#accent)" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Lightning Bolt / Dynamic Messenger Bolt -->
+      <path d="M35 16L19 33H30L27 46L45 27H33L35 16Z" fill="url(#accent)"/>
+    </g>
+  </g>
+
+  <!-- Title & Branding -->
+  <text x="86" y="234" fill="#FFFFFF" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="6">FCA NATIVE</text>
+  <text x="90" y="272" fill="#A5B4FC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="4">FLOPPA RESILIENT MESSENGER ENGINE • V5.0</text>
+  
+  <!-- Animated Underline -->
+  <rect x="90" y="296" width="160" height="4" rx="2" fill="url(#accent)">
+    <animate attributeName="width" values="100;260;100" dur="4s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Status Tags / Badges (Right Side) -->
+  <g transform="translate(820, 96)">
+    <!-- Badge 1: 24/7 Resilience Core -->
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="294" height="48" rx="14" fill="#FFFFFF" fill-opacity="0.05" stroke="#38BDF8" stroke-opacity="0.3"/>
+      <circle cx="24" cy="24" r="6" fill="#10B981">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="42" y="29" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">SELF-HEALING RESILIENCE</text>
+    </g>
+
+    <!-- Badge 2: Adaptive Rate Limiter -->
+    <g transform="translate(0, 62)" filter="url(#shadow)">
+      <rect x="0" y="0" width="294" height="48" rx="14" fill="#FFFFFF" fill-opacity="0.05" stroke="#818CF8" stroke-opacity="0.3"/>
+      <circle cx="24" cy="24" r="6" fill="#818CF8"/>
+      <text x="42" y="29" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">ADAPTIVE RATE LIMITER</text>
+    </g>
+
+    <!-- Badge 3: Circuit Breaker -->
+    <g transform="translate(0, 124)" filter="url(#shadow)">
+      <rect x="0" y="0" width="294" height="48" rx="14" fill="#FFFFFF" fill-opacity="0.05" stroke="#C084FC" stroke-opacity="0.3"/>
+      <circle cx="24" cy="24" r="6" fill="#C084FC"/>
+      <text x="42" y="29" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">CIRCUIT BREAKER ENGINE</text>
+    </g>
+
+    <!-- Badge 4: Package Name -->
+    <g transform="translate(0, 186)" filter="url(#shadow)">
+      <rect x="0" y="0" width="294" height="48" rx="14" fill="#FFFFFF" fill-opacity="0.05" stroke="#00F2FE" stroke-opacity="0.3"/>
+      <circle cx="24" cy="24" r="6" fill="#00F2FE"/>
+      <text x="42" y="29" fill="#38BDF8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">@floppa/fca-native</text>
+    </g>
+  </g>
+</svg>
