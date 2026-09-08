@@ -115,59 +115,49 @@ Clone or copy `@floppa/fca-native` directly into the `./fca` directory in your b
 
 ---
 
-## 📦 Installation & Usage Guide
+## 📦 Installation & Usage (GitHub & npm)
 
-`@floppa/fca-native` is designed to be completely flexible. You can use it via **npm registry**, directly from **GitHub (like npm)**, or **completely without npm** as a local drop-in folder.
+Since this package is currently hosted directly on GitHub prior to npm registry release, **normal users do not need an npm account or SSH keys**. You can install and use it directly using standard npm via public GitHub HTTPS:
 
-### 1. Install via npm / yarn / pnpm
+### 1. Install Directly from GitHub (Recommended)
 
 ```bash
-# Standard npm install
-npm install @floppa/fca-native@latest
-
-# Yarn
-yarn add @floppa/fca-native
-
-# pnpm
-pnpm add @floppa/fca-native
+npm install frnAlt/fca-native
 ```
-
----
-
-### 2. Install Directly from GitHub (Like npm, No Registry Required)
-
-You can install `@floppa/fca-native` directly from GitHub into any bot project without relying on npm releases:
-
+Or with full GitHub shortcut / Git HTTPS URL:
 ```bash
-# Install directly from GitHub shortcut
 npm install github:frnAlt/fca-native
-
-# Or via full Git URL
+# or
 npm install https://github.com/frnAlt/fca-native.git
 ```
 
-#### In your bot's `package.json`:
-You can declare it directly as a GitHub dependency:
+#### Add to your bot's `package.json`:
 ```json
-{
-  "dependencies": {
-    "@floppa/fca-native": "github:frnAlt/fca-native"
-  }
+"dependencies": {
+  "@floppa/fca-native": "github:frnAlt/fca-native"
 }
 ```
-Then simply run `npm install`. Node will automatically resolve and require it just like an npm package:
+Then simply run:
+```bash
+npm install
+```
+And import normally in your code:
 ```javascript
 const login = require("@floppa/fca-native");
+
+(async () => {
+  const api = await login({ appState: require("./appstate.json") });
+  // ...
+})();
 ```
 
 ---
 
-### 3. Use Without npm (Local Clone / Standalone Drop-in `./fca`)
+### 2. Use Completely Without npm (Direct Local Clone / Drop-in `./fca`)
 
-If you don't want to publish/install via npm or want an offline-ready, portable local engine:
+If you want an offline-ready, portable local engine without managing npm packages:
 
 #### Step 1: Clone into your bot directory
-Clone directly into the `./fca` folder inside your bot project root:
 ```bash
 # In your bot root directory:
 git clone https://github.com/frnAlt/fca-native.git ./fca
@@ -180,10 +170,9 @@ npm install --production
 cd ..
 ```
 
-#### Step 3: Require directly in your code
-You can now import the engine directly without any package resolution:
+#### Step 3: Require locally in your code
 ```javascript
-// Load from local folder
+// Load directly from local folder
 const login = require("./fca");
 
 login({ appState: require("./appstate.json") }, (err, api) => {
@@ -198,6 +187,22 @@ login({ appState: require("./appstate.json") }, (err, api) => {
 > const localFca = defaultRequire(path.join(process.cwd(), "fca"));
 > ```
 > If `./fca` exists, GoatBot **automatically detects and loads it** as the native local engine with zero extra configuration required!
+
+---
+
+### 3. npm Registry (Upcoming Release)
+
+Once published to the global npm registry:
+```bash
+# Standard npm install
+npm install @floppa/fca-native@latest
+
+# Yarn
+yarn add @floppa/fca-native
+
+# pnpm
+pnpm add @floppa/fca-native
+```
 
 ---
 
