@@ -1,39 +1,41 @@
 {
   "name": "@floppa/fca-native",
   "version": "5.0.0",
-  "description": "Native Floppa-Chatbot Facebook Chat API Engine - High performance, modern 24/7 Messenger API",
-  "main": "dist/cjs.cjs",
-  "types": "dist/index.d.ts",
+  "description": "Native High-Performance Facebook Chat API Engine for GoatBot v2 and Modern Messenger Automation",
+  "main": "index.js",
+  "types": "src/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/cjs.cjs",
+      "types": "./src/types/index.d.ts",
+      "require": "./index.js",
       "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
+      "default": "./index.js"
     }
   },
   "files": [
-    "dist/",
-    "docs/",
     "README.md",
-    "test/",
     "LICENSE",
-    "fca-config.example.json",
+    "index.js",
     "src/",
     "assets/",
-    "index.js"
+    "dist/",
+    "docs/",
+    "fca-config.example.json"
   ],
   "scripts": {
-    "test": "node ./test/fca.test.cjs"
+    "test": "node ./test/fca.test.cjs",
+    "validate": "npm pack --dry-run",
+    "prepack": "echo \"Preparing @floppa/fca-native for npm...\""
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frnAlt/Floppa-Chatbot.git",
-    "directory": "fca"
+    "url": "git+https://github.com/frnAlt/fca-native.git"
   },
   "keywords": [
     "floppa",
-    "floppa-chatbot",
+    "fca-native",
+    "goatbot",
+    "goatbot-v2",
     "facebook",
     "chat",
     "api",
@@ -41,7 +43,11 @@
     "bot",
     "fca",
     "gtajisan",
-    "metachat"
+    "frnalt",
+    "lazyneoaz",
+    "metachat",
+    "automation",
+    "mqtt"
   ],
   "author": {
     "name": "Gtajisan (Farhan Muh Tasim)",
@@ -49,19 +55,23 @@
   },
   "contributors": [
     {
-      "name": "DongDev",
-      "url": "https://github.com/dongp06"
+      "name": "Gtajisan (Farhan Muh Tasim)",
+      "url": "https://github.com/frnAlt"
     },
     {
-      "name": "NeoKEX",
+      "name": "NeoKEX (lazyneoaz)",
       "url": "https://github.com/lazyneoaz"
+    },
+    {
+      "name": "DongDev",
+      "url": "https://github.com/dongp06"
     }
   ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/frnAlt/Floppa-Chatbot/issues"
+    "url": "https://github.com/frnAlt/fca-native/issues"
   },
-  "homepage": "https://github.com/frnAlt/Floppa-Chatbot#readme",
+  "homepage": "https://github.com/frnAlt/fca-native#readme",
   "engines": {
     "node": ">=18.0.0"
   },
