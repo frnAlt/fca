@@ -144,9 +144,6 @@ npm install github:frnAlt/fca-native
 
 # Or via full Git URL
 npm install https://github.com/frnAlt/fca-native.git
-
-# Or via SSH
-npm install git+ssh://git@github.com:frnAlt/fca-native.git
 ```
 
 #### In your bot's `package.json`:
