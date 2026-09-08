@@ -1,6 +1,6 @@
-# @dongdev/fca-unofficial — Documentation
+# @floppa/fca-native — Documentation
 
-Comprehensive reference for **version 4.x**. The library is written in TypeScript; the published package ships `dist/` only. Source under `src/` is on [GitHub](https://github.com/dongp06/fca-unofficial).
+Comprehensive reference for **version 5.x**. Source under `src/` is on [GitHub](https://github.com/frnAlt/Floppa-Chatbot/tree/main/fca).
 
 ---
 
@@ -31,14 +31,14 @@ Comprehensive reference for **version 4.x**. The library is written in TypeScrip
 ## 1. Installation & Build
 
 ```bash
-npm install @dongdev/fca-unofficial@latest
+npm install @floppa/fca-native@latest
 ```
 
 To work from source:
 
 ```bash
-git clone https://github.com/dongp06/fca-unofficial.git
-cd fca-unofficial
+git clone https://github.com/frnAlt/Floppa-Chatbot.git
+cd Floppa-Chatbot/fca
 npm install
 npm run build
 ```
@@ -68,7 +68,7 @@ Additional scripts:
 `package.json` points CommonJS `require` at `dist/cjs.cjs`, so the module itself **is** the `login` function (with all named exports copied onto it):
 
 ```javascript
-const login = require("@dongdev/fca-unofficial");
+const login = require("@floppa/fca-native");
 
 login({ appState: require("./appstate.json") }, (err, api) => {
   if (err) return console.error(err);
@@ -86,7 +86,7 @@ login({ appState: [...] }, { listenEvents: true }, (err, api) => { ... });
 ### 2.2. `login()` — Promise, returns `FcaContext`
 
 ```typescript
-import { login } from "@dongdev/fca-unofficial";
+import { login } from "@floppa/fca-native";
 
 const ctx = await login(
   { appState: require("./appstate.json") },
@@ -108,7 +108,7 @@ Use **`loginAsync`** if you need an explicit async function reference without ov
 ### 2.4. `loginLegacy()` — callback with `FcaContext`
 
 ```javascript
-const { loginLegacy } = require("@dongdev/fca-unofficial");
+const { loginLegacy } = require("@floppa/fca-native");
 
 loginLegacy({ appState: require("./appstate.json") }, (err, ctx) => {
   if (err) return console.error(err);
@@ -163,7 +163,7 @@ Most methods accept an optional trailing `callback(err, result)`. When the callb
 `createFcaClient` wraps the flat API into domain-grouped namespaces:
 
 ```typescript
-import { createFcaClient } from "@dongdev/fca-unofficial";
+import { createFcaClient } from "@floppa/fca-native";
 
 const client = createFcaClient(ctx.api);
 
@@ -243,7 +243,7 @@ When the connection drops, the library schedules a reconnect with debounce and j
 ### 5.1. Creating a bot
 
 ```typescript
-import { createMessengerBot } from "@dongdev/fca-unofficial";
+import { createMessengerBot } from "@floppa/fca-native";
 
 const bot = await createMessengerBot(
   { Cookie: process.env.FCA_COOKIE },
@@ -389,7 +389,7 @@ cp fca-config.example.json fca-config.json
     "enabled": true,
     "install": true,
     "notifyIfCurrent": true,
-    "packageName": "@dongdev/fca-unofficial",
+    "packageName": "@floppa/fca-native",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000
   }
@@ -475,7 +475,7 @@ When Sequelize and the `Thread` model are available, `getThreadInfo` reads from 
 This function is called automatically during the standard bootstrap. For custom login flows, you can invoke it manually:
 
 ```typescript
-import { attachThreadInfoRealtimeSync } from "@dongdev/fca-unofficial";
+import { attachThreadInfoRealtimeSync } from "@floppa/fca-native";
 
 attachThreadInfoRealtimeSync(ctx, models, logger, api);
 ```
@@ -639,7 +639,7 @@ The scheduler domain provides utilities for deferred and periodic task execution
 
 ## 16. Exports Summary
 
-All public exports from `@dongdev/fca-unofficial`:
+All public exports from `@floppa/fca-native`:
 
 | Export                          | Category       | Description                                       |
 |---------------------------------|----------------|---------------------------------------------------|

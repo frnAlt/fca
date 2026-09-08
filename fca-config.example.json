@@ -4,7 +4,7 @@
     "enabled": true,
     "install": true,
     "notifyIfCurrent": true,
-    "packageName": "@dongdev/fca-unofficial",
+    "packageName": "@floppa/fca-native",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000
   },
