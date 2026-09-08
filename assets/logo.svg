@@ -1,0 +1,84 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">FCA Native Logo</title>
+  <desc id="logoDesc">Official Logo for @floppa/fca-native Messenger Engine</desc>
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#070914"/>
+      <stop offset="0.5" stop-color="#0f112e"/>
+      <stop offset="1" stop-color="#061826"/>
+    </linearGradient>
+
+    <!-- Neon Ring & Accent Gradient -->
+    <linearGradient id="neonAccent" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE"/>
+      <stop offset="0.35" stop-color="#38BDF8"/>
+      <stop offset="0.7" stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <!-- Inner Bubble Gradient -->
+    <linearGradient id="bubbleGrad" x1="128" y1="120" x2="384" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE" stop-opacity="0.25"/>
+      <stop offset="0.5" stop-color="#38BDF8" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#818CF8" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <!-- Bolt Gradient -->
+    <linearGradient id="boltGrad" x1="200" y1="160" x2="330" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE"/>
+      <stop offset="0.55" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <!-- Glowing Filters -->
+    <filter id="outerGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="iconGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="boltGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base Outer Container with Glow -->
+  <rect x="24" y="24" width="464" height="464" rx="116" fill="url(#bgGrad)" stroke="url(#neonAccent)" stroke-width="4" filter="url(#outerGlow)"/>
+
+  <!-- Subtle Inner Grid / Ring -->
+  <circle cx="256" cy="256" r="190" stroke="url(#neonAccent)" stroke-width="1" stroke-dasharray="8 12" stroke-opacity="0.25">
+    <animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="30s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Messenger Speech Bubble Icon -->
+  <g filter="url(#iconGlow)">
+    <path d="M256 100C163.2 100 88 169.8 88 256C88 302.8 108.8 344.6 142.4 373L130 436L205.6 400.2C221.8 407.8 238.4 412 256 412C348.8 412 424 342.2 424 256C424 169.8 348.8 100 256 100Z" fill="url(#bubbleGrad)" stroke="url(#neonAccent)" stroke-width="8" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Center Lightning Bolt (FCA Core Engine) -->
+  <g filter="url(#boltGlow)">
+    <path d="M275 160L175 272H245L225 352L337 240H267L275 160Z" fill="url(#boltGrad)">
+      <animate attributeName="opacity" values="1;0.82;1" dur="2.5s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- Small Cyber Tech Accents -->
+  <circle cx="150" cy="150" r="4" fill="#00F2FE" opacity="0.6"/>
+  <circle cx="362" cy="150" r="4" fill="#C084FC" opacity="0.6"/>
+  <circle cx="362" cy="362" r="4" fill="#38BDF8" opacity="0.6"/>
+</svg>
