@@ -1,8 +1,22 @@
-<p align="center">
-  <img src="./assets/fca-native-banner.svg" alt="FCA Native Banner" width="100%" />
-</p>
+<div align="center">
+
+<img src="./assets/fca-native-banner.svg" alt="FCA Native Banner" width="100%" />
+
+<br><br>
+
+<img src="./assets/fca-logo.svg" alt="FCA Native Logo" width="130" height="130" />
 
 # @floppa/fca-native
+
+**Next-Generation Native Facebook Chat API Engine for Floppa-Chatbot**  
+*24/7 Session Stability • Adaptive Rate Limiter • Circuit Breaker Self-Healing • MQTT Realtime*
+
+[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg?style=for-the-badge)](package.json)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg?style=for-the-badge)](LICENSE)
+[![Engine](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-success?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![Author](https://img.shields.io/badge/Author-Gtajisan%20(frnAlt)-ff69b4?style=for-the-badge)](https://github.com/frnAlt)
+
+</div>
 
 Native **Floppa-Chatbot Facebook Chat API Engine** — High performance, modern 24/7 Messenger API with advanced session stability, adaptive rate limiting, circuit breakers, and self-healing resilience.
 
