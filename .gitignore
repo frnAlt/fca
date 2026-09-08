@@ -1,0 +1,25 @@
+node_modules/
+*.log
+*.tgz
+.env
+.env.*
+
+# Never commit session cookies — treat them like passwords
+appstate.json
+appState.json
+appstate*.json
+cookies.json
+cookie*.txt
+
+# SQLite databases & cache
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+Fca_Database/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

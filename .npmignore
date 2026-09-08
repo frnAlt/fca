@@ -1,0 +1,19 @@
+# Development & CI
+.git/
+.github/
+*.log
+*.tgz
+.env
+.env.*
+
+# Test / local data
+node_modules/
+test/
+appstate.json
+appState.json
+cookie*.txt
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+Fca_Database/

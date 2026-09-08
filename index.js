@@ -45,6 +45,7 @@ const { ConnectionPoolManager } = require('./src/utils/ConnectionPoolManager');
 module.exports = login;
 
 module.exports.login = login;
+module.exports.default = login;
 module.exports.loginAsync = loginAsync;
 module.exports.loginLegacy = loginLegacy;
 module.exports.DEFAULT_OPTIONS = DEFAULT_OPTIONS;

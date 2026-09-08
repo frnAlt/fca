@@ -464,17 +464,18 @@ function version() {
 function credits() {
   if (!shouldLog('info')) return;
   const { name, version: ver } = readLocalPackage();
-  const title = `${name} v${ver} (Native Local Engine)`;
+  const title = `${name} v${ver} (GoatBot v2 Native Engine)`;
   console.log(applyTheme(`
  ╔═══════════════════════════════════════════════════════════════════════╗
- ║                     FLOPPA FACEBOOK CHAT API                          ║
+ ║                     FLOPPA FCA NATIVE ENGINE                          ║
  ║  ${title.padEnd(69, ' ')}║
  ║  Developer : Gtajisan (Farhan Muh Tasim)                              ║
  ║  Maintainer: frnAlt                                                   ║
- ║  Package   : @floppa/fca-native (Enhanced Local Core)                 ║
+ ║  Core Arch : NeoKEX (lazyneoaz)                                       ║
+ ║  Package   : @floppa/fca-native                                       ║
  ║  Protocol  : Realtime MQTT / WebSocket TLS Engine                     ║
  ║  Engine    : Floppa Multi-Engine Platform                             ║
- ║  GitHub    : https://github.com/frnAlt/Floppa-Chatbot                 ║
+ ║  GitHub    : https://github.com/frnAlt/fca-native                      ║
  ╚═══════════════════════════════════════════════════════════════════════╝`));
 }
 

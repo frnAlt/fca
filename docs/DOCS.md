@@ -1,6 +1,6 @@
 # @floppa/fca-native — Documentation
 
-Comprehensive reference for **version 5.x**. Source under `src/` is on [GitHub](https://github.com/frnAlt/Floppa-Chatbot/tree/main/fca).
+Comprehensive reference for **version 4.x**. The library is written in TypeScript; the published package ships `dist/` only. Source under `src/` is on [GitHub](https://github.com/frnAlt/fca-native).
 
 ---
 
@@ -37,8 +37,8 @@ npm install @floppa/fca-native@latest
 To work from source:
 
 ```bash
-git clone https://github.com/frnAlt/Floppa-Chatbot.git
-cd Floppa-Chatbot/fca
+git clone https://github.com/frnAlt/fca-native.git
+cd fca-native
 npm install
 npm run build
 ```

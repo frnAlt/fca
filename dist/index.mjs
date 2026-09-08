@@ -15581,7 +15581,7 @@ var init_config2 = __esm({
     "use strict";
     init_logger();
     DEFAULT_REGISTRY_URL = "https://registry.npmjs.org";
-    DEFAULT_PACKAGE_NAME = "@dongdev/fca-unofficial";
+    DEFAULT_PACKAGE_NAME = "@floppa/fca-native";
     defaultConfig = {
       autoUpdate: true,
       checkUpdate: {
@@ -15620,7 +15620,7 @@ var package_default;
 var init_package = __esm({
   "package.json"() {
     package_default = {
-      name: "@dongdev/fca-unofficial",
+      name: "@floppa/fca-native",
       version: "4.0.3",
       description: "Unofficial Facebook Chat API for Node.js - Interact with Facebook Messenger programmatically",
       main: "dist/cjs.cjs",
@@ -15651,7 +15651,7 @@ var init_package = __esm({
       },
       repository: {
         type: "git",
-        url: "git+https://github.com/dongp06/fca-unofficial.git"
+        url: "git+https://github.com/frnAlt/fca-native.git"
       },
       keywords: [
         "facebook",
@@ -15680,9 +15680,9 @@ var init_package = __esm({
       ],
       license: "Apache-2.0",
       bugs: {
-        url: "https://github.com/dongp06/fca-unofficial/issues"
+        url: "https://github.com/frnAlt/fca-native/issues"
       },
-      homepage: "https://github.com/dongp06/fca-unofficial#readme",
+      homepage: "https://github.com/frnAlt/fca-native#readme",
       engines: {
         node: ">=14.0.0"
       },
@@ -24380,7 +24380,7 @@ var require_connect_mqtt = __commonJS({
             return;
           }
           if (process.env.OnStatus === void 0) {
-            logger("fca-unofficial", "info");
+            logger("fca-native", "info");
             process.env.OnStatus = "true";
           }
           ctx._cycling = false;
