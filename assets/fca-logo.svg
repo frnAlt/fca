@@ -1,70 +1,64 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
-  <title id="logoTitle">Floppa FCA &amp; GoatBot v2 Logo</title>
-  <desc id="logoDesc">Official Logo for @floppa/fca with Priyansh Core &amp; GoatBot v2 Engine</desc>
+  <title id="logoTitle">Floppa FCA &amp; GoatBot v2 Cyber Crimson Logo</title>
+  <desc id="logoDesc">High-Velocity Facebook Chat API Engine with Priyansh Core &amp; GoatBot v2 Resilience</desc>
   <defs>
-    <!-- Background Gradients -->
-    <linearGradient id="fcaBgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#050714"/>
-      <stop offset="0.45" stop-color="#0b112c"/>
-      <stop offset="0.85" stop-color="#120c24"/>
-      <stop offset="1" stop-color="#051824"/>
+    <!-- Obsidian & Crimson Void Background -->
+    <linearGradient id="cyberBg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07040D"/>
+      <stop offset="0.4" stop-color="#14071D"/>
+      <stop offset="0.75" stop-color="#1C0616"/>
+      <stop offset="1" stop-color="#08020A"/>
     </linearGradient>
 
-    <!-- Neon Rim Gradient -->
-    <linearGradient id="fcaNeonRim" x1="32" y1="32" x2="480" y2="480" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#00F2FE"/>
-      <stop offset="0.3" stop-color="#38BDF8"/>
-      <stop offset="0.6" stop-color="#818CF8"/>
-      <stop offset="0.85" stop-color="#C084FC"/>
-      <stop offset="1" stop-color="#10B981"/>
+    <!-- Fiery Cyberpunk Neon Rim -->
+    <linearGradient id="cyberRim" x1="24" y1="24" x2="488" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF007F"/>
+      <stop offset="0.35" stop-color="#FF5400"/>
+      <stop offset="0.65" stop-color="#FFB703"/>
+      <stop offset="0.85" stop-color="#9D4EDD"/>
+      <stop offset="1" stop-color="#05FFA1"/>
     </linearGradient>
 
-    <!-- Goat Horns Gradient -->
-    <linearGradient id="hornGradLeft" x1="100" y1="100" x2="220" y2="220" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#10B981"/>
-      <stop offset="0.4" stop-color="#00F2FE"/>
-      <stop offset="1" stop-color="#38BDF8"/>
-    </linearGradient>
-    <linearGradient id="hornGradRight" x1="412" y1="100" x2="292" y2="220" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#C084FC"/>
-      <stop offset="0.5" stop-color="#818CF8"/>
-      <stop offset="1" stop-color="#38BDF8"/>
+    <!-- Left Horn (Fiery Neon Crimson / Gold) -->
+    <linearGradient id="hornLeft" x1="90" y1="110" x2="220" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF007F"/>
+      <stop offset="0.5" stop-color="#FF5400"/>
+      <stop offset="1" stop-color="#FFB703"/>
     </linearGradient>
 
-    <!-- Messenger Bubble Gradient -->
-    <linearGradient id="fcaBubbleGrad" x1="120" y1="170" x2="390" y2="420" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#00F2FE" stop-opacity="0.22"/>
-      <stop offset="0.5" stop-color="#38BDF8" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#818CF8" stop-opacity="0.26"/>
+    <!-- Right Horn (Electric Ultraviolet / Amethyst) -->
+    <linearGradient id="hornRight" x1="422" y1="110" x2="292" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9D4EDD"/>
+      <stop offset="0.5" stop-color="#C77DFF"/>
+      <stop offset="1" stop-color="#FF007F"/>
     </linearGradient>
 
-    <!-- Bolt Gradient -->
-    <linearGradient id="fcaBoltGrad" x1="210" y1="200" x2="320" y2="380" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#00F2FE"/>
-      <stop offset="0.45" stop-color="#38BDF8"/>
-      <stop offset="0.8" stop-color="#F59E0B"/>
-      <stop offset="1" stop-color="#EF4444"/>
+    <!-- Chat Bubble (Dark Ruby / Deep Plasma Translucent) -->
+    <linearGradient id="plasmaBubble" x1="114" y1="180" x2="398" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF007F" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="#9D4EDD" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FF5400" stop-opacity="0.25"/>
     </linearGradient>
 
-    <!-- Glowing Filters -->
-    <filter id="fcaOuterGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur"/>
+    <!-- Central Lightning Plasma Bolt (Molten Gold to Hot Pink) -->
+    <linearGradient id="plasmaBolt" x1="220" y1="200" x2="330" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF066"/>
+      <stop offset="0.3" stop-color="#FFB703"/>
+      <stop offset="0.7" stop-color="#FF5400"/>
+      <stop offset="1" stop-color="#FF007F"/>
+    </linearGradient>
+
+    <!-- Glow & Shadow Filters -->
+    <filter id="crimsonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <filter id="fcaHornGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="10" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <filter id="fcaBoltGlow" x="-35%" y="-35%" width="170%" height="170%">
-      <feGaussianBlur stdDeviation="9" result="blur"/>
+    <filter id="boltFire" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="11" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -72,53 +66,53 @@
     </filter>
   </defs>
 
-  <!-- Base Squircle Container with Cyber Neon Border -->
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#fcaBgGrad)" stroke="url(#fcaNeonRim)" stroke-width="4.5" filter="url(#fcaOuterGlow)"/>
+  <!-- Base Squircle Container with Plasma Neon Rim -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#cyberBg)" stroke="url(#cyberRim)" stroke-width="4.5" filter="url(#crimsonGlow)"/>
 
-  <!-- Rotating Tech Ring -->
-  <circle cx="256" cy="256" r="200" stroke="url(#fcaNeonRim)" stroke-width="1.2" stroke-dasharray="10 14" stroke-opacity="0.3">
-    <animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="36s" repeatCount="indefinite"/>
+  <!-- Orbiting Cyber Gyro Rings -->
+  <circle cx="256" cy="256" r="202" stroke="url(#cyberRim)" stroke-width="1.4" stroke-dasharray="12 16" stroke-opacity="0.4">
+    <animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="32s" repeatCount="indefinite"/>
   </circle>
 
-  <!-- Concentric Inner Shield Ring -->
-  <circle cx="256" cy="256" r="172" stroke="#38BDF8" stroke-width="0.8" stroke-opacity="0.2" stroke-dasharray="4 8"/>
+  <circle cx="256" cy="256" r="176" stroke="#FF5400" stroke-width="0.9" stroke-opacity="0.25" stroke-dasharray="6 10">
+    <animateTransform attributeName="transform" type="rotate" from="360 256 256" to="0 256 256" dur="24s" repeatCount="indefinite"/>
+  </circle>
 
-  <!-- GoatBot v2 Cybernetic Horns (Left & Right) -->
-  <g filter="url(#fcaHornGlow)">
+  <!-- GoatBot v2 Cybernetic Horns (Left: Molten Crimson-Gold, Right: Ultraviolet-Magenta) -->
+  <g filter="url(#crimsonGlow)">
     <!-- Left Goat Horn -->
-    <path d="M 218 194 C 188 152 144 114 98 128 C 76 135 72 162 90 178 C 114 198 154 196 198 214 Z" fill="url(#hornGradLeft)" stroke="#00F2FE" stroke-width="2.5" stroke-linejoin="round" opacity="0.95"/>
-    <path d="M 124 148 C 146 160 174 178 196 204" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 218 194 C 188 150 142 112 94 126 C 72 134 68 162 88 178 C 112 198 152 196 198 214 Z" fill="url(#hornLeft)" stroke="#FFB703" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M 122 146 C 144 158 174 178 196 204" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" opacity="0.65"/>
 
     <!-- Right Goat Horn -->
-    <path d="M 294 194 C 324 152 368 114 414 128 C 436 135 440 162 422 178 C 398 198 358 196 314 214 Z" fill="url(#hornGradRight)" stroke="#C084FC" stroke-width="2.5" stroke-linejoin="round" opacity="0.95"/>
-    <path d="M 388 148 C 366 160 338 178 316 204" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 294 194 C 324 150 370 112 418 126 C 440 134 444 162 424 178 C 400 198 360 196 314 214 Z" fill="url(#hornRight)" stroke="#C77DFF" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M 390 146 C 368 158 338 178 316 204" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" opacity="0.65"/>
   </g>
 
-  <!-- Messenger Chat Bubble Container -->
-  <g filter="url(#fcaOuterGlow)">
-    <!-- Main Chat Bubble Body -->
-    <path d="M 256 182 C 176 182 114 238 114 306 C 114 344 134 378 166 400 L 152 444 L 214 420 C 228 426 242 430 256 430 C 336 430 398 374 398 306 C 398 238 336 182 256 182 Z" fill="url(#fcaBubbleGrad)" stroke="url(#fcaNeonRim)" stroke-width="6.5" stroke-linejoin="round"/>
+  <!-- Messenger Chat Bubble -->
+  <g filter="url(#crimsonGlow)">
+    <path d="M 256 182 C 176 182 114 238 114 306 C 114 344 134 378 166 400 L 152 444 L 214 420 C 228 426 242 430 256 430 C 336 430 398 374 398 306 C 398 238 336 182 256 182 Z" fill="url(#plasmaBubble)" stroke="url(#cyberRim)" stroke-width="6.5" stroke-linejoin="round"/>
   </g>
 
-  <!-- Center Dynamic Lightning Bolt (Priyansh FCA Engine Core) -->
-  <g filter="url(#fcaBoltGlow)">
-    <path d="M 276 210 L 186 314 H 250 L 232 396 L 332 284 H 268 L 276 210 Z" fill="url(#fcaBoltGrad)" stroke="#FFFFFF" stroke-width="1.2">
-      <animate attributeName="opacity" values="1;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  <!-- Fiery Plasma Bolt (Priyansh Core Velocity) -->
+  <g filter="url(#boltFire)">
+    <path d="M 278 208 L 184 314 H 250 L 230 398 L 334 282 H 268 L 278 208 Z" fill="url(#plasmaBolt)" stroke="#FFF" stroke-width="1.4">
+      <animate attributeName="opacity" values="1;0.82;1" dur="2s" repeatCount="indefinite"/>
     </path>
   </g>
 
-  <!-- Tech Badge Pill: GOATBOT v2 • FLOPPA -->
-  <g transform="translate(146, 442)">
-    <rect x="0" y="0" width="220" height="28" rx="14" fill="#070A1A" stroke="url(#fcaNeonRim)" stroke-width="1.5" stroke-opacity="0.8"/>
-    <circle cx="16" cy="14" r="4.5" fill="#10B981">
-      <animate attributeName="opacity" values="1;0.35;1" dur="1.8s" repeatCount="indefinite"/>
+  <!-- Bottom Cyber Tag: GOATBOT v2 • PRIYANSH -->
+  <g transform="translate(136, 442)">
+    <rect x="0" y="0" width="240" height="28" rx="14" fill="#0A0412" stroke="url(#cyberRim)" stroke-width="1.6"/>
+    <circle cx="16" cy="14" r="4.5" fill="#FF007F">
+      <animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite"/>
     </circle>
-    <text x="28" y="18" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="800" letter-spacing="2">GOATBOT v2 • FCA</text>
+    <text x="28" y="18" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="900" letter-spacing="2">GOATBOT v2 • PRIYANSH</text>
   </g>
 
-  <!-- Corner Tech Accent Dots -->
-  <circle cx="140" cy="116" r="3.5" fill="#10B981" opacity="0.8"/>
-  <circle cx="372" cy="116" r="3.5" fill="#C084FC" opacity="0.8"/>
-  <circle cx="86" cy="256" r="3" fill="#00F2FE" opacity="0.6"/>
-  <circle cx="426" cy="256" r="3" fill="#818CF8" opacity="0.6"/>
+  <!-- Tech Accent Sparkles -->
+  <circle cx="140" cy="116" r="4" fill="#FFB703" opacity="0.9"/>
+  <circle cx="372" cy="116" r="4" fill="#FF007F" opacity="0.9"/>
+  <circle cx="86" cy="256" r="3" fill="#05FFA1" opacity="0.75"/>
+  <circle cx="426" cy="256" r="3" fill="#9D4EDD" opacity="0.75"/>
 </svg>

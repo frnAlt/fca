@@ -43,6 +43,7 @@ See [below](#projects-using-this-api) for projects using this API.
 
 - [🌟 Priyansh FCA Core Logic & Hybrid Integration](#-priyansh-fca-core-logic--hybrid-integration)
 - [🛡️ How We Ported Priyansh's FCA to Modern Bot Logic](#️-how-we-ported-priyanshs-fca-to-modern-bot-logic)
+- [⚖️ Architecture & Core Logic Differences](#️-architecture--core-logic-differences)
 - [🐐 GoatBot v2 & Floppa-Chatbot Compatibility](#-goatbot-v2--floppa-chatbot-compatibility)
 - [📦 Installation](#-installation)
 - [🚀 Example Usage & Quick Start](#-example-usage--quick-start)
@@ -119,6 +120,43 @@ To make Priyansh's core engine seamlessly drive modern bot frameworks like **Goa
    3-state circuit breakers (`CLOSED`, `OPEN`, `HALF_OPEN`) prevent bot freezes during transient Facebook outages.
 6. **Node 24 Compatibility**:  
    Added native crypto fallbacks for legacy `aes-js`, UUID v4 compatibility hooks, and automatic local `node_modules` path resolution.
+
+---
+
+## ⚖️ Architecture & Core Logic Differences
+
+Below is an in-depth technical comparison highlighting the evolutionary differences between **Classic Legacy FCA**, **Priyansh FCA Core**, and our **Floppa @floppa/fca** engine:
+
+| Architectural Dimension | Classic Legacy FCA (`fca-unofficial`) | Priyansh FCA Core (`fca-priyansh`) | Floppa Hybrid Engine (`@floppa/fca`) |
+|---|---|---|---|
+| **Facebook Protocol** | Legacy Sync HTTP / Polling | High-Speed MQTT Delta v1/v2 | Enhanced MQTT Delta v1/v2 + Circuit Breakers |
+| **Authentication Logic** | Basic credentials / raw AppState | 2FA OTP (`Otp_code`) + Encrypted state + 956 bypass | Priyansh 2FA + `parseUniversalCookies` (AppState, Netscape, Header strings) |
+| **Anti-Suspension & Warmup** | ❌ None (Rapid account checkpoint) | ⚠️ Manual delays | ✅ `globalAntiSuspension` (Gradual startup warmup heuristics) |
+| **Rate Limiting Engine** | ❌ None (Uncontrolled bursts) | ⚠️ Basic static timeout | ✅ `AdaptiveRateLimiter` (6 sliding-window token buckets + dynamic penalty scaling) |
+| **Session Longevity** | ❌ Expires after hours (`fb_dtsg` loss) | ⚠️ Requires full re-login | ✅ `SessionStabilityManager` (Automated background token renewal) |
+| **Database & Persistence** | ❌ None / plaintext JSON | ✅ SQLite (`Extra/Database`) + `Horizon_Database` | ✅ Resilient SQLite + auto JSON fallback for zero-crash Node 24 support |
+| **Bot Framework Integration** | Mirai only | Priyansh-Bot & customized Mirai | 🐐 **100% GoatBot v2**, **Floppa-Chatbot**, **Baka-Chan**, & **Mirai** drop-in (`./fca`) |
+| **API Architecture** | Flat monolithic callback | Flat callback + basic promises | Dual-mode: Flat API + Grouped Domain Facades + `createMessengerBot` |
+| **Runtime & Dependencies** | ❌ Crashes on Node 20+ | ⚠️ Native compile errors on Node 24 | ✅ Modern Node 24 support with native crypto & auto-resolving local modules |
+| **Distribution Method** | Broken public npm | GitHub fork (`Porter-union-rom-updates/Fca`) | 🔒 Independent GitHub engine (`frnAlt/fca`) & local drop-in clone |
+
+### 🔍 Deep Dive: Logic Improvements in Floppa's Port
+
+#### 1. Credential Ingestion Logic (Universal Cookie Parser)
+* **Priyansh Logic**: Required an exact JSON array format or email/password. Any formatting deviation (such as browser-exported Netscape `cookies.txt` or raw semicolon-separated headers) threw a parsing exception.
+* **Floppa Port**: Injects [`parseUniversalCookies`](./src/utils/formatters/value/formatCookie.js). It dynamically inspects the input type, sanitizes attribute keys (`domain`, `expires`, `samesite`), strips Netscape `#HttpOnly_` prefixes, and deduplicates cookie pairs on the fly.
+
+#### 2. Outgoing Traffic Regulation (Adaptive Rate Limiter)
+* **Priyansh Logic**: Relied on static `autoRestartMinutes` and bot-level sleep calls.
+* **Floppa Port**: Implements [`AdaptiveRateLimiter`](./src/utils/AdaptiveRateLimiter.js). Every outbound request (`sendMessage`, `changeNickname`, `setReaction`, `uploadAttachment`) is routed through independent rate limit buckets with sliding-window accounting. If Facebook responds with temporary rate limit headers, the limiter automatically scales down request velocity without crashing the bot.
+
+#### 3. Error Resilience & Self-Healing (Circuit Breakers)
+* **Priyansh Logic**: Network exceptions or Facebook API timeouts were caught via standard `try/catch` callbacks, which could cause socket backlogs and memory leaks during extended outages.
+* **Floppa Port**: Uses [`ResilienceManager`](./src/utils/ResilienceManager.js). Endpoints transition between `CLOSED`, `OPEN`, and `HALF_OPEN` states, failing fast when Facebook is unresponsive and recovering automatically when connectivity returns.
+
+#### 4. Zero-Config GoatBot v2 Integration
+* **Priyansh Logic**: Required custom bot bootstrap scripts to initialize `global.Fca`.
+* **Floppa Port**: Seamlessly auto-initializes `global.Fca` when required, provides `api.getCurrentUserID()`, `api.stopListening()`, and `api.getHealthStatus()`, and auto-registers with GoatBot v2's `./fca` local loader.
 
 ---
 
