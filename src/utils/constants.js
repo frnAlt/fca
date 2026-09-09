@@ -467,14 +467,15 @@ function credits() {
   const title = `${name} v${ver} (GoatBot v2 Native Engine)`;
   console.log(applyTheme(`
  ╔═══════════════════════════════════════════════════════════════════════╗
- ║                     FLOPPA FCA NATIVE ENGINE                          ║
+ ║                FLOPPA FCA • GOATBOT v2 NATIVE ENGINE                  ║
  ║  ${title.padEnd(69, ' ')}║
+ ║  Platform  : GoatBot v2 & Floppa-Chatbot                              ║
  ║  Developer : Gtajisan (Farhan Muh Tasim)                              ║
  ║  Maintainer: frnAlt                                                   ║
+ ║  Priyansh  : Priyansh Rajput (fca-priyansh Core Engine)               ║
  ║  Core Arch : NeoKEX (lazyneoaz) & Priyansh Rajput                     ║
- ║  Package   : @floppa/fca                                              ║
- ║  Protocol  : Realtime MQTT / WebSocket TLS Engine                     ║
- ║  Engine    : Floppa Multi-Engine Platform                             ║
+ ║  Package   : @floppa/fca (Independent GitHub Engine)                  ║
+ ║  Protocol  : Realtime MQTT Delta / WebSocket TLS                      ║
  ║  GitHub    : https://github.com/frnAlt/fca                             ║
  ╚═══════════════════════════════════════════════════════════════════════╝`));
 }
