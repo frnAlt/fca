@@ -17,6 +17,9 @@ cookie*.txt
 *.db
 *.db-journal
 Fca_Database/
+Horizon_Database/RandPass.json
+Horizon_Database/*.sqlite
+Horizon_Database/*.db
 
 # OS / Editor files
 .DS_Store

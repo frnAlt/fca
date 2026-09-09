@@ -1,7 +1,7 @@
 {
-  "name": "@floppa/fca-native",
-  "version": "5.0.0",
-  "description": "Native High-Performance Facebook Chat API Engine for GoatBot v2 and Modern Messenger Automation",
+  "name": "@floppa/fca",
+  "version": "5.1.0",
+  "description": "High-Performance Facebook Chat API Engine for GoatBot v2 with Priyansh Core Logic, Anti-Suspension, and Modern Messenger Automation",
   "main": "index.js",
   "types": "src/types/index.d.ts",
   "exports": {
@@ -16,7 +16,15 @@
     "README.md",
     "LICENSE",
     "index.js",
+    "Main.js",
+    "utils.js",
+    "logger.js",
+    "broadcast.js",
     "src/",
+    "Extra/",
+    "Func/",
+    "Language/",
+    "Horizon_Database/",
     "assets/",
     "dist/",
     "docs/",
@@ -25,15 +33,18 @@
   "scripts": {
     "test": "node ./test/fca.test.cjs",
     "validate": "npm pack --dry-run",
-    "prepack": "echo \"Preparing @floppa/fca-native for npm...\""
+    "prepack": "echo \"Preparing @floppa/fca for npm...\""
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frnAlt/fca-native.git"
+    "url": "git+https://github.com/frnAlt/fca.git"
   },
   "keywords": [
     "floppa",
+    "fca",
     "fca-native",
+    "fca-priyansh",
+    "priyansh",
     "goatbot",
     "goatbot-v2",
     "facebook",
@@ -41,16 +52,16 @@
     "api",
     "messenger",
     "bot",
-    "fca",
     "gtajisan",
     "frnalt",
     "lazyneoaz",
+    "dongdev",
     "metachat",
     "automation",
     "mqtt"
   ],
   "author": {
-    "name": "Gtajisan (Farhan Muh Tasim)",
+    "name": "Gtajisan (Farhan Muh Tasim) & Priyansh Rajput",
     "url": "https://github.com/frnAlt"
   },
   "contributors": [
@@ -59,19 +70,27 @@
       "url": "https://github.com/frnAlt"
     },
     {
+      "name": "Priyansh Rajput",
+      "url": "https://github.com/priyanshufsdev"
+    },
+    {
       "name": "NeoKEX (lazyneoaz)",
       "url": "https://github.com/lazyneoaz"
     },
     {
-      "name": "DongDev",
+      "name": "Phạm Minh Đồng (DongDev)",
       "url": "https://github.com/dongp06"
+    },
+    {
+      "name": "XNIL6X 404",
+      "url": "https://github.com/xnil6x404"
     }
   ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/frnAlt/fca-native/issues"
+    "url": "https://github.com/frnAlt/fca/issues"
   },
-  "homepage": "https://github.com/frnAlt/fca-native#readme",
+  "homepage": "https://github.com/frnAlt/fca#readme",
   "engines": {
     "node": ">=18.0.0"
   },
