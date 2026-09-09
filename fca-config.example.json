@@ -1,9 +1,9 @@
 {
-  "autoUpdate": true,
+  "autoUpdate": false,
   "checkUpdate": {
-    "enabled": true,
-    "install": true,
-    "notifyIfCurrent": true,
+    "enabled": false,
+    "install": false,
+    "notifyIfCurrent": false,
     "packageName": "@floppa/fca",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000

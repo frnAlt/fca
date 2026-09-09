@@ -31,9 +31,7 @@
     "fca-config.example.json"
   ],
   "scripts": {
-    "test": "node ./test/fca.test.cjs",
-    "validate": "npm pack --dry-run",
-    "prepack": "echo \"Preparing @floppa/fca for npm...\""
+    "test": "node ./test/fca.test.cjs"
   },
   "repository": {
     "type": "git",
@@ -142,9 +140,5 @@
     "eslint": "^9.20.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }

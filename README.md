@@ -184,6 +184,21 @@ npm install
 
 ---
 
+### 2. Local Drop-In Engine (No npm Needed — Recommended for GoatBot v2)
+
+If you want a portable, standalone local engine without managing npm dependencies:
+
+```bash
+# In your bot root directory:
+git clone https://github.com/frnAlt/fca.git ./fca
+```
+
+GoatBot v2 and Floppa-Chatbot will automatically detect and prioritize `./fca` as the native local engine with zero configuration required!
+
+> 🔒 **Independent GitHub Distribution:** This library is maintained and distributed exclusively via GitHub (`frnAlt/fca`) and direct local drop-in. It is **not published on the public npm registry** to ensure complete stability, security, and full autonomy over your bot infrastructure.
+
+---
+
 ## 🚀 Example Usage & Quick Start
 
 ### Basic Echo Bot (Callback Style)
