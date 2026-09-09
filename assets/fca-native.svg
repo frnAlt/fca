@@ -98,8 +98,8 @@
   </g>
 
   <!-- Title & Branding -->
-  <text x="86" y="234" fill="#FFFFFF" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="6">FCA NATIVE</text>
-  <text x="90" y="272" fill="#A5B4FC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="4">FLOPPA RESILIENT MESSENGER ENGINE • V5.0</text>
+  <text x="86" y="234" fill="#FFFFFF" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="6">FLOPPA FCA</text>
+  <text x="90" y="272" fill="#A5B4FC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="4">PRIYANSH CORE • GOATBOT V2 ENGINE • V5.1</text>
   
   <!-- Animated Underline -->
   <rect x="90" y="296" width="160" height="4" rx="2" fill="url(#accent)">
@@ -114,7 +114,7 @@
       <circle cx="24" cy="24" r="6" fill="#10B981">
         <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
       </circle>
-      <text x="42" y="29" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">SELF-HEALING RESILIENCE</text>
+      <text x="42" y="29" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">PRIYANSH CORE LOGIC</text>
     </g>
 
     <!-- Badge 2: Adaptive Rate Limiter -->
