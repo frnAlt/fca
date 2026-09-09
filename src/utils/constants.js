@@ -427,9 +427,9 @@ function readLocalPackage() {
     const pkgPath = path.resolve(__dirname, "..", "..", "package.json");
     const data = fs.readFileSync(pkgPath, "utf8");
     const json = JSON.parse(data);
-    return { name: json.name || "@floppa/fca-native", version: json.version || "5.0.0" };
+    return { name: json.name || "@floppa/fca", version: json.version || "5.1.0" };
   } catch (_) {
-    return { name: "@floppa/fca-native", version: "5.0.0" };
+    return { name: "@floppa/fca", version: "5.1.0" };
   }
 }
 
@@ -471,11 +471,11 @@ function credits() {
  ║  ${title.padEnd(69, ' ')}║
  ║  Developer : Gtajisan (Farhan Muh Tasim)                              ║
  ║  Maintainer: frnAlt                                                   ║
- ║  Core Arch : NeoKEX (lazyneoaz)                                       ║
- ║  Package   : @floppa/fca-native                                       ║
+ ║  Core Arch : NeoKEX (lazyneoaz) & Priyansh Rajput                     ║
+ ║  Package   : @floppa/fca                                              ║
  ║  Protocol  : Realtime MQTT / WebSocket TLS Engine                     ║
  ║  Engine    : Floppa Multi-Engine Platform                             ║
- ║  GitHub    : https://github.com/frnAlt/fca-native                      ║
+ ║  GitHub    : https://github.com/frnAlt/fca                             ║
  ╚═══════════════════════════════════════════════════════════════════════╝`));
 }
 

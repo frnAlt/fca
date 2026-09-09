@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
         enabled: false,
         install: false,
         notifyIfCurrent: false,
-        packageName: "@floppa/fca-native",
+        packageName: "@floppa/fca",
         registryUrl: "https://registry.npmjs.org",
         timeoutMs: 10000,
     },

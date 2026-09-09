@@ -61,12 +61,14 @@
     "mqtt"
   ],
   "author": {
-    "name": "Gtajisan (Farhan Muh Tasim) & Priyansh Rajput",
+    "name": "Gtajisan (Farhan Muh Tasim)",
+    "email": "sultana01537118@gmail.com",
     "url": "https://github.com/frnAlt"
   },
   "contributors": [
     {
       "name": "Gtajisan (Farhan Muh Tasim)",
+      "email": "sultana01537118@gmail.com",
       "url": "https://github.com/frnAlt"
     },
     {

@@ -1,6 +1,6 @@
-# @floppa/fca-native — Documentation
+# @floppa/fca — Documentation
 
-Comprehensive reference for **version 4.x**. The library is written in TypeScript; the published package ships `dist/` only. Source under `src/` is on [GitHub](https://github.com/frnAlt/fca-native).
+Comprehensive reference for **version 4.x**. The library is written in TypeScript; the published package ships `dist/` only. Source under `src/` is on [GitHub](https://github.com/frnAlt/fca).
 
 ---
 
@@ -31,14 +31,14 @@ Comprehensive reference for **version 4.x**. The library is written in TypeScrip
 ## 1. Installation & Build
 
 ```bash
-npm install @floppa/fca-native@latest
+npm install @floppa/fca@latest
 ```
 
 To work from source:
 
 ```bash
-git clone https://github.com/frnAlt/fca-native.git
-cd fca-native
+git clone https://github.com/frnAlt/fca.git
+cd fca
 npm install
 npm run build
 ```
@@ -68,7 +68,7 @@ Additional scripts:
 `package.json` points CommonJS `require` at `dist/cjs.cjs`, so the module itself **is** the `login` function (with all named exports copied onto it):
 
 ```javascript
-const login = require("@floppa/fca-native");
+const login = require("@floppa/fca");
 
 login({ appState: require("./appstate.json") }, (err, api) => {
   if (err) return console.error(err);
@@ -86,7 +86,7 @@ login({ appState: [...] }, { listenEvents: true }, (err, api) => { ... });
 ### 2.2. `login()` — Promise, returns `FcaContext`
 
 ```typescript
-import { login } from "@floppa/fca-native";
+import { login } from "@floppa/fca";
 
 const ctx = await login(
   { appState: require("./appstate.json") },
@@ -108,7 +108,7 @@ Use **`loginAsync`** if you need an explicit async function reference without ov
 ### 2.4. `loginLegacy()` — callback with `FcaContext`
 
 ```javascript
-const { loginLegacy } = require("@floppa/fca-native");
+const { loginLegacy } = require("@floppa/fca");
 
 loginLegacy({ appState: require("./appstate.json") }, (err, ctx) => {
   if (err) return console.error(err);
@@ -163,7 +163,7 @@ Most methods accept an optional trailing `callback(err, result)`. When the callb
 `createFcaClient` wraps the flat API into domain-grouped namespaces:
 
 ```typescript
-import { createFcaClient } from "@floppa/fca-native";
+import { createFcaClient } from "@floppa/fca";
 
 const client = createFcaClient(ctx.api);
 
@@ -243,7 +243,7 @@ When the connection drops, the library schedules a reconnect with debounce and j
 ### 5.1. Creating a bot
 
 ```typescript
-import { createMessengerBot } from "@floppa/fca-native";
+import { createMessengerBot } from "@floppa/fca";
 
 const bot = await createMessengerBot(
   { Cookie: process.env.FCA_COOKIE },
@@ -389,7 +389,7 @@ cp fca-config.example.json fca-config.json
     "enabled": true,
     "install": true,
     "notifyIfCurrent": true,
-    "packageName": "@floppa/fca-native",
+    "packageName": "@floppa/fca",
     "registryUrl": "https://registry.npmjs.org",
     "timeoutMs": 10000
   }
@@ -475,7 +475,7 @@ When Sequelize and the `Thread` model are available, `getThreadInfo` reads from 
 This function is called automatically during the standard bootstrap. For custom login flows, you can invoke it manually:
 
 ```typescript
-import { attachThreadInfoRealtimeSync } from "@floppa/fca-native";
+import { attachThreadInfoRealtimeSync } from "@floppa/fca";
 
 attachThreadInfoRealtimeSync(ctx, models, logger, api);
 ```
@@ -639,7 +639,7 @@ The scheduler domain provides utilities for deferred and periodic task execution
 
 ## 16. Exports Summary
 
-All public exports from `@floppa/fca-native`:
+All public exports from `@floppa/fca`:
 
 | Export                          | Category       | Description                                       |
 |---------------------------------|----------------|---------------------------------------------------|

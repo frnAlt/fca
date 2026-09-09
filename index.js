@@ -132,11 +132,15 @@ if (!global.Fca) {
     const selectedLang = (languageFile.find(i => i.Language === userConfig.Language) || languageFile[0] || {}).Folder || {};
 
     global.Fca = {
+        Author: "Gtajisan (Farhan Muh Tasim)",
+        Developer: "frnAlt",
+        Email: "sultana01537118@gmail.com",
+        Repository: "https://github.com/frnAlt/fca",
         isThread: [],
         isUser: [],
         startTime: Date.now(),
         Setting: new Map(),
-        Version: require("./package.json").version || "5.0.0",
+        Version: require("./package.json").version || "5.1.0",
         Require: {
             fs: fs,
             Fetch: null,
@@ -407,4 +411,10 @@ try {
 module.exports.getVersion = function getVersion() {
     return require("./package.json").version;
 };
+
+module.exports.author = "Gtajisan (Farhan Muh Tasim)";
+module.exports.developer = "frnAlt";
+module.exports.email = "sultana01537118@gmail.com";
+module.exports.repository = "https://github.com/frnAlt/fca";
+
 

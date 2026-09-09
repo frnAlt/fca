@@ -1,6 +1,6 @@
 <svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">FCA Native</title>
-  <desc id="desc">Animated gradient banner for Floppa @floppa/fca-native Messenger Engine.</desc>
+  <desc id="desc">Animated gradient banner for Floppa @floppa/fca Messenger Engine.</desc>
   <defs>
     <!-- Background Gradients -->
     <linearGradient id="background" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
@@ -135,7 +135,7 @@
     <g transform="translate(0, 186)" filter="url(#shadow)">
       <rect x="0" y="0" width="294" height="48" rx="14" fill="#FFFFFF" fill-opacity="0.05" stroke="#00F2FE" stroke-opacity="0.3"/>
       <circle cx="24" cy="24" r="6" fill="#00F2FE"/>
-      <text x="42" y="29" fill="#38BDF8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">@floppa/fca-native</text>
+      <text x="42" y="29" fill="#38BDF8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">@floppa/fca</text>
     </g>
   </g>
 </svg>

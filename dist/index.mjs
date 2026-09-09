@@ -15581,7 +15581,7 @@ var init_config2 = __esm({
     "use strict";
     init_logger();
     DEFAULT_REGISTRY_URL = "https://registry.npmjs.org";
-    DEFAULT_PACKAGE_NAME = "@floppa/fca-native";
+    DEFAULT_PACKAGE_NAME = "@floppa/fca";
     defaultConfig = {
       autoUpdate: true,
       checkUpdate: {
@@ -15620,7 +15620,7 @@ var package_default;
 var init_package = __esm({
   "package.json"() {
     package_default = {
-      name: "@floppa/fca-native",
+      name: "@floppa/fca",
       version: "4.0.3",
       description: "Unofficial Facebook Chat API for Node.js - Interact with Facebook Messenger programmatically",
       main: "dist/cjs.cjs",
@@ -15651,7 +15651,7 @@ var init_package = __esm({
       },
       repository: {
         type: "git",
-        url: "git+https://github.com/frnAlt/fca-native.git"
+        url: "git+https://github.com/frnAlt/fca.git"
       },
       keywords: [
         "facebook",
@@ -15680,9 +15680,9 @@ var init_package = __esm({
       ],
       license: "Apache-2.0",
       bugs: {
-        url: "https://github.com/frnAlt/fca-native/issues"
+        url: "https://github.com/frnAlt/fca/issues"
       },
-      homepage: "https://github.com/frnAlt/fca-native#readme",
+      homepage: "https://github.com/frnAlt/fca#readme",
       engines: {
         node: ">=14.0.0"
       },

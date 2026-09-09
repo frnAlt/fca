@@ -76,7 +76,7 @@ type LoginApiCallback = (err: Error | null | undefined, api?: Loose) => void;
 declare function loginAsync(credentials: LoginCredentials$1, customOptions?: FcaOptions): Promise<FcaContext>;
 /**
  * Login: Promise API, or legacy `login(credentials, (err, api) => …)` like classic FCA.
- * For `const login = require('@floppa/fca-native')`, use the published `dist/cjs.cjs` entry.
+ * For `const login = require('@floppa/fca')`, use the published `dist/cjs.cjs` entry.
  */
 declare function login(credentials: LoginCredentials$1, callback: LoginApiCallback): void;
 declare function login(credentials: LoginCredentials$1, options: FcaOptions, callback: LoginApiCallback): void;

@@ -15,7 +15,7 @@ try {
 
 const originalLogin = typeof m.login === "function" ? m.login : m.default;
 if (typeof originalLogin !== "function") {
-  throw new Error("@floppa/fca-native: expected login to be a function (check dist/index.js exports).");
+  throw new Error("@floppa/fca: expected login to be a function (check dist/index.js exports).");
 }
 
 function hybridLogin(credentials, options, callback) {
